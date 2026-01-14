@@ -1,0 +1,24 @@
+# Base LLM & API
+openai
+python-dotenv
+
+# Framework & Orchestration
+langchain
+langchain-openai
+langchain-community
+langgraph
+
+# Vector Database
+chromadb
+
+# Data Processing
+tiktoken
+beautifulsoup4
+markdown
+
+# Utility
+pandas
+tqdm
+ipykernel
+scikit-learn
+streamlit
