@@ -4,6 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 from langchain.chat_models import init_chat_model
+from tools.rag_tools import policy_search_tool
 import uuid
 from datetime import datetime
 import os
@@ -53,7 +54,8 @@ def setup_node(state: NegotiationState):
     return initial_state
 
 def ai_node(state: NegotiationState):
-    llm = init_chat_model(model=state["model"], temperature=0.9)
+    tools = [policy_search_tool]
+    llm = init_chat_model(model=state["model"], temperature=0.9).bind_tools(tools)
     
     recent_msgs = state["messages"][-4:] if state["messages"] else []
 
@@ -101,6 +103,10 @@ SVI (Shared Value Integration) 접근 설명:
 지침:
 - 당신은 '{role}'로서만 말하세요. 절대 상대의 입장이나 생각을 대신 말하지 마세요.
 - 상대의 말에 직접 반응하고, 감정적으로 표현하세요.
+- 실제 규정 정보가 필요하다고 판단되면 'policy_search_tool'을 호출하여 실제 규정을 바탕으로 답변하세요.
+- policy_search_tool을 사용할 때는 키워드 중심의 검색 쿼리를 생성하여 사용하세요. (예: 환불 관련 정책, 무료 교환 가능 여부)
+- 'policy_search_tool'을 통해 규정을 확인했다면, 검색된 결과 중 현재 상황(오배송, 환불 불가 등)에 가장 정확히 부합하는 조항을 인용하세요.
+- 만약 'policy_search_tool'을 사용했다면 당신의 최종 발화에는 규정의 원문(text)이 포함되어야 합니다.
 - 반드시 환불 혹은 차선책으로 대화를 이끌어가세요.
 - IRP 또는 SVI 전략 중 하나 이상을 자연스럽게 활용하세요.
 - 한글로만 대화하세요.
@@ -122,7 +128,7 @@ SVI (Shared Value Integration) 접근 설명:
     ])
 
 
-    chain = prompt | llm | StrOutputParser()
+    chain = prompt | llm
 
     response = chain.invoke({
         "role": state["ai_role"],
@@ -131,10 +137,17 @@ SVI (Shared Value Integration) 접근 설명:
         "priority": state["ai_priority"],
         "recent_summary": "\n".join([f"{type(m).__name__}: {m.content}" for m in recent_msgs]),
         "past_feedback_summary": state.get("mediator_feedback", "중재자 피드백 없음."),
-        "last_message": state["messages"][-1].content if state["messages"] else "대화 시작"
+        "last_message": state["messages"][-1].content if state["messages"] else f"이제 협상을 시작합니다. 당신은 {state['ai_role']}로서 상대방에게 첫 마디를 건네세요."
     })
 
-    clean_response = response.split("최종 발화:")[-1].strip()
+    if response.tool_calls:
+        return {"messages": [response]}
+
+    content = response.content
+    if "최종 발화:" in content:
+        clean_response = content.split("최종 발화:")[-1].strip()
+    else:
+        clean_response = content.strip()
 
     return {"messages": [AIMessage(content=clean_response)]}
 

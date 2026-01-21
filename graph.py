@@ -2,6 +2,8 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from state import NegotiationState
 from nodes import ai_node, setup_node, mediator_node, evaluation_node
+from langgraph.prebuilt import ToolNode, tools_condition
+from tools.rag_tools import policy_search_tool
 
 
 def create_graph():
@@ -19,10 +21,20 @@ def create_graph():
     workflow.add_node("mediator", mediator_node)
     workflow.add_node("evaluate", evaluation_node)
     workflow.add_node("human_input", lambda state: state)
+    workflow.add_node("tools", ToolNode([policy_search_tool]))
 
     workflow.set_entry_point("setup_node")
     workflow.add_edge("setup_node", "ai_agent")
-    workflow.add_edge("ai_agent", "mediator")
+
+    workflow.add_conditional_edges(
+        "ai_agent",
+        tools_condition,
+        {
+            "tools": "tools",
+            "__end__": "mediator"
+        }
+    )
+    workflow.add_edge("tools", "ai_agent")
     workflow.add_conditional_edges(
         "mediator",
         should_continue,
