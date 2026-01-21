@@ -3,7 +3,6 @@ from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage
 
 class NegotiationState(TypedDict):
-    # 대화 내역
     messages: Annotated[List[BaseMessage], add_messages]
     user_role: str
     ai_role:str
@@ -19,3 +18,5 @@ class NegotiationState(TypedDict):
     seller_score: int
     mediator_feedback: str
     is_finished: bool
+
+    model: str

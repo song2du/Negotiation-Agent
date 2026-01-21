@@ -3,6 +3,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
+from langchain.chat_models import init_chat_model
 import uuid
 from datetime import datetime
 import os
@@ -11,6 +12,7 @@ import pandas as pd
 def setup_node(state: NegotiationState):
     u_role = state.get("user_role", "구매자") 
     a_role = "판매자" if u_role == "구매자" else "구매자"
+    model = state.get("model", "gpt-4o")
     
     priorities = [
     "상대가 올린 욕설 섞인 리뷰 삭제 요청하기",
@@ -45,12 +47,13 @@ def setup_node(state: NegotiationState):
         "user_priority": priorities[1] if u_role == "구매자" else priorities[0],
         "ai_priority": priorities[1] if a_role == "구매자" else priorities[0],
         "mediator_feedback": "중재자 피드백 없음.",
-        "is_finished": False
+        "is_finished": False,
+        "model": model
     }
     return initial_state
 
 def ai_node(state: NegotiationState):
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.9)
+    llm = init_chat_model(model=state["model"], temperature=0.9)
     
     recent_msgs = state["messages"][-4:] if state["messages"] else []
 
@@ -136,7 +139,7 @@ SVI (Shared Value Integration) 접근 설명:
     return {"messages": [AIMessage(content=clean_response)]}
 
 def mediator_node(state: NegotiationState):
-    llm = ChatOpenAI(model_name="gpt-4", temperature=0.5)
+    llm = init_chat_model(model=state["model"], temperature=0.5)
     
     dialogue = "\n".join([f"[{type(m).__name__}] {m.content}" for m in state["messages"]])
     system_prompt = """
@@ -174,7 +177,7 @@ def mediator_node(state: NegotiationState):
     }
 
 def evaluation_node(state: NegotiationState):
-    llm = ChatOpenAI(model_name="gpt-4", temperature=0.5)
+    llm = init_chat_model(model=state["model"], temperature=0.5)
 
     unique_id = str(uuid.uuid4())[:8] # 짧은 UID 생성
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

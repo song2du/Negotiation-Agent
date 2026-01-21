@@ -15,11 +15,15 @@ if "graph" not in st.session_state:
 # 사이드바 설정
 with st.sidebar:
     role = st.radio("역할 선택", ["구매자", "판매자"])
+    model = st.selectbox(
+        "협상에 사용할 모델을 선택해 주세요.",
+        ("gpt-4o",  "claude-3-5-sonnet-latest", "gpt-5.2", "claude-4-5-sonnet-latest")
+    )
     if st.button("협상 시작/초기화"):
         st.session_state.config["configurable"]["thread_id"] = str(uuid.uuid4())
         st.session_state.messages = []
         # 초기 실행 (AI 선공)
-        init_state = {"user_role": role, "messages": []}
+        init_state = {"user_role": role, "messages": [], "model":model}
         for event in st.session_state.graph.stream(init_state, st.session_state.config):
             for node, data in event.items():
                 if "messages" in data and data["messages"]:
