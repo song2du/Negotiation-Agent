@@ -47,7 +47,7 @@ def ai_node(state: NegotiationState):
     system_message = SystemMessagePromptTemplate.from_template(
         template=NEGOTIATOR_SYSTEM_PROMPT,
         input_variables=["role", "opponent", "scenario", "priority", "recent_summary", 
-                         "past_feedback_summary"]
+                         "past_feedback_summary", "reflections"]
     )
     human_message = HumanMessagePromptTemplate.from_template(
         template=NEGOTIATOR_HUMAN_PROMPT,
