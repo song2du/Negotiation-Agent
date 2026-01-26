@@ -1,5 +1,6 @@
 from .state import NegotiationState
 from langchain_core.messages import AIMessage
+from langchain_core.messages import RemoveMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import init_chat_model
 from tools.rag_tools import policy_search_tool
@@ -22,9 +23,11 @@ def setup_node(state: NegotiationState):
     
     model = state.get("model", "gpt-4o")
 
+    delete_messages = [RemoveMessage(id=m.id) for m in state.get("messages", [])]
+
     # 초기 State 구성
     initial_state = {
-        "messages": [], 
+        "messages": delete_messages, 
         "user_role": u_role, 
         "ai_role": a_role, 
         "user_scenario": SCENARIOS[u_role],
@@ -32,8 +35,7 @@ def setup_node(state: NegotiationState):
         "user_priority": PRIORITIES[u_role],
         "ai_priority": PRIORITIES[a_role],
         "is_finished": False,
-        "model": model,
-        "reflections": state.get("reflections", [])
+        "model": model
     }
     return initial_state
 
