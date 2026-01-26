@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
-from IPython.display import Image, display
+from langgraph.prebuilt import ToolNode
+from tools.rag_tools import policy_search_tool
 
 from react_reflexion.state import NegotiationState
 from react_reflexion.nodes import (
@@ -14,6 +15,11 @@ def route_after_negotiation(state: NegotiationState):
     """
     협상 노드가 끝난 후 어디로 갈지 결정
     """
+    last_msg = state["messages"][-1]
+
+    if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
+        return "tools"
+    
     MAX_TURNS = 10
     cuurent_turns = len(state["messages"]) // 2
     if state.get("is_finished"):
@@ -38,12 +44,14 @@ def route_after_evaluation(state: NegotiationState):
 def build_reflexion_graph():
     workflow = StateGraph(NegotiationState)
     memory = MemorySaver()
+    tools = [policy_search_tool]
 
     workflow.add_node("setup", setup_node)
     workflow.add_node("negotiator", negotiator_node)
     workflow.add_node("evaluator", evaluation_node)
     workflow.add_node("reflector", reflection_node)
-    
+    workflow.add_node("tools", ToolNode(tools))
+
     # [Start] -> [Setup] 
     workflow.add_edge(START, "setup")
     
@@ -55,10 +63,14 @@ def build_reflexion_graph():
         "negotiator",
         route_after_negotiation,
         {
-            END: END,        
-            "evaluator": "evaluator" 
+            "tools": "tools",        
+            "evaluator": "evaluator",
+            END: END 
         }
     )
+
+    # [Tools] -> [Negotiator]
+    workflow.add_edge("tools", "negotiator")
 
     # [Evaluator] -> [분기점] (성공 or 반성?)
     workflow.add_conditional_edges(
