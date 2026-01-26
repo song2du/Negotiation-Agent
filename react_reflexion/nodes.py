@@ -1,4 +1,4 @@
-from state import NegotiationState
+from .state import NegotiationState
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import init_chat_model
@@ -12,9 +12,9 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate, 
     HumanMessagePromptTemplate
 )
-from prompts import NEGOTIATOR_SYSTEM_PROMPT, EVALUATOR_SYSTEM_PROMPT, REFLECTION_SYSTEM_PROMPT
-from prompts import NEGOTIATOR_HUMAN_PROMPT, EVALUATOR_HUMAN_PROMPT, REFLECTION_HUMAN_PROMPT
-from scenarios import PRIORITIES, SCENARIOS
+from .prompts import NEGOTIATOR_SYSTEM_PROMPT, EVALUATOR_SYSTEM_PROMPT, REFLECTION_SYSTEM_PROMPT
+from .prompts import NEGOTIATOR_HUMAN_PROMPT, EVALUATOR_HUMAN_PROMPT, REFLECTION_HUMAN_PROMPT
+from .scenarios import PRIORITIES, SCENARIOS
 
 def setup_node(state: NegotiationState):
     u_role = state.get("user_role", "구매자") 
