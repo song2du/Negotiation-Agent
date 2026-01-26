@@ -1,4 +1,5 @@
 from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver
 from IPython.display import Image, display
 
 from react_reflexion.state import NegotiationState
@@ -36,6 +37,7 @@ def route_after_evaluation(state: NegotiationState):
 
 def build_reflexion_graph():
     workflow = StateGraph(NegotiationState)
+    memory = MemorySaver()
 
     workflow.add_node("setup", setup_node)
     workflow.add_node("negotiator", negotiator_node)
@@ -72,7 +74,7 @@ def build_reflexion_graph():
     # 반성 내용을 들고 Setup으로 가서 'reflections'만 남기고 메모리 리셋
     workflow.add_edge("reflector", "setup")
 
-    return workflow.compile()
+    return workflow.compile(checkpointer=memory)
 
 # 그래프 생성
 app = build_reflexion_graph()
