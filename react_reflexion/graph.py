@@ -13,7 +13,12 @@ def route_after_negotiation(state: NegotiationState):
     """
     협상 노드가 끝난 후 어디로 갈지 결정
     """
+    MAX_TURNS = 10
+    cuurent_turns = len(state["messages"]) // 2
     if state.get("is_finished"):
+        return "evaluator"
+    
+    if cuurent_turns >= MAX_TURNS:
         return "evaluator"
     
     return END
