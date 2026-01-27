@@ -34,7 +34,7 @@ if not st.session_state.is_started:
     
     with col2:
         st.markdown("<br><br><br>", unsafe_allow_html=True) # 상단 여백
-        st.title("🤖 HCI Negotiation Agent")
+        st.title("HCI Lab Negotiation Agent")
         st.markdown("### 협상 AI 에이전트 실험 플랫폼")
         st.info("실험 설정을 완료하고 '협상 시작' 버튼을 눌러주세요.")
         
@@ -57,6 +57,48 @@ if not st.session_state.is_started:
                 index=0
             )
 
+            # 협상 목표 선택
+            st.markdown(f"#### 나 ({role})의 우선 순위 설정")
+
+            default_u_a = "환불 받기" if role == "구매자" else "환불 거절하기"
+            default_u_b = "상대로부터 사과받기" if role == "구매자" else "상대가 올린 욕설 섞인 리뷰 삭제 요청하기"
+
+            u_goal_a = st.text_input("나의 목표 A (Main)", value=default_u_a)
+            u_goal_b = st.text_input("나의 목표 B (Sub)", value=default_u_b)
+
+            u_weight = st.slider(
+                "⚖️ 중요도 비중 (목표 A <---> 목표 B)", 
+                min_value=0, max_value=100, value=70, step=5,
+                key="user_slider",
+                help="왼쪽으로 갈수록 목표 A가 중요하고, 오른쪽으로 갈수록 목표 B가 중요해집니다."
+            )
+
+            u_score_a = u_weight
+            u_score_b = 100 - u_weight
+        
+            st.caption(f"📊 {u_goal_a} ({u_score_a}점) vs {u_goal_b} ({u_score_b}점)")
+
+            ai_role_name = "판매자" if role == "구매자" else "구매자"
+            st.markdown(f"#### 상대방 ({ai_role_name})의 우선 순위 설정")
+
+            default_a_a = "환불 받기" if ai_role_name == "구매자" else "환불 거절하기"
+            default_a_b = "상대로부터 사과받기" if ai_role_name == "구매자" else "상대가 올린 욕설 섞인 리뷰 삭제 요청하기"
+
+            a_goal_a = st.text_input("상대 목표 A (Main)", value=default_a_a)
+            a_goal_b = st.text_input("상대 목표 B (Sub)", value=default_a_b)
+
+            a_weight = st.slider(
+                "⚖️ 중요도 비중 (목표 A <---> 목표 B)", 
+                min_value=0, max_value=100, value=60, step=5,
+                key="ai_slider"
+            )
+        
+            a_score_a = a_weight
+            a_score_b = 100 - a_weight
+        
+            st.caption(f"📊 {a_goal_a} ({a_score_a}점) vs {a_goal_b} ({a_score_b}점)")
+
+
             st.markdown("---")
             
             # 시작 버튼
@@ -67,6 +109,16 @@ if not st.session_state.is_started:
                 st.session_state.model_name = model_name
                 st.session_state.config["configurable"]["thread_id"] = str(uuid.uuid4())
                 st.session_state.messages = [] # 화면 표시용 메시지 초기화
+
+                user_goals_dict = {
+                    u_goal_a: u_score_a,
+                    u_goal_b: u_score_b
+                }
+    
+                ai_goals_dict = {
+                    a_goal_a: a_score_a,
+                    a_goal_b: a_score_b
+                }
                 
                 # 그래프 선택 로드
                 if st.session_state.mode == "Baseline":
@@ -76,7 +128,13 @@ if not st.session_state.is_started:
                 
                 # 초기 실행 (Setup -> 첫 발화 유도)
                 # setup_node가 초기 state를 반환하므로 이를 반영해야 함
-                init_inputs = {"user_role": role, "model": model_name, "messages": []}
+                init_inputs = {
+                    "user_role": role, 
+                    "model": model_name, 
+                    "messages": [],
+                    "user_priority_inputs": user_goals_dict,
+                    "ai_priority_inputs": ai_goals_dict
+                }
                 
                 # Setup 단계 실행 (Reflexion의 경우 setup -> negotiator까지 흐름)
                 with st.spinner("에이전트를 초기화하고 시나리오를 로드 중입니다..."):
@@ -177,7 +235,13 @@ else:
                             last_reflection = reflections[-1]
                             with st.chat_message("system", avatar="🧠"):
                                 st.warning(f"**[Self-Reflection]** 실패를 감지했습니다. 전략을 수정합니다:\n\n{last_reflection}")
-                            # 반성 후에는 다시 Negotiator로 넘어가므로, 사용자는 잠시 기다려야 함
+                        st.session_state.messages = []
+
+                        st.session_state.messages.append({
+                                    "role": "system",
+                                    "content": f"**전략 수정 완료!** 새로운 마음으로 협상을 다시 시작합니다.\n\n💡 **반성 내용:** {last_reflection}",
+                                    "avatar": "🔄"
+                                })
 
             # 4. 종료 상태 확인
             current_state = st.session_state.graph.get_state(st.session_state.config)
