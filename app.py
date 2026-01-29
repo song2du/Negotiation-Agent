@@ -42,9 +42,8 @@ if not st.session_state.is_started:
             # 1. 모드 선택
             mode = st.radio(
                 "🧪 실험 모드 선택",
-                ["Baseline (기본)", "ReAct+Reflexion (자기성찰)"],
-                index=1,
-                captions=["기본 에이전트", "실패 시 스스로 반성하고 재도전하는 에이전트"]
+                ["CoT+In-context learning", "ReAct+Reflexion"],
+                index=1
             )
             
             # 2. 역할 선택
