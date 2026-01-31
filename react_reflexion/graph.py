@@ -3,7 +3,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode
 from tools.rag_tools import policy_search_tool
 
-from react_reflexion.state import NegotiationState
+from core.state import NegotiationState
 from react_reflexion.nodes import (
     negotiator_node,
     evaluation_node,

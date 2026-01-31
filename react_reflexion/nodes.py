@@ -1,4 +1,4 @@
-from .state import NegotiationState
+from core.state import NegotiationState
 from langchain_core.messages import AIMessage
 from langchain_core.messages import RemoveMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -14,9 +14,9 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate, 
     HumanMessagePromptTemplate
 )
-from .prompts import NEGOTIATOR_SYSTEM_PROMPT, EVALUATOR_SYSTEM_PROMPT, REFLECTION_SYSTEM_PROMPT
-from .prompts import NEGOTIATOR_HUMAN_PROMPT, EVALUATOR_HUMAN_PROMPT, REFLECTION_HUMAN_PROMPT
-from .scenarios import PRIORITIES, SCENARIOS
+from core.prompts import REFELXION_NEGOTIATOR_SYSTEM, REFELXION_EVALUATOR_SYSTEM, REFELXION_REFLECTION_SYSTEM
+from core.prompts import REFELXION_NEGOTIATOR_HUMAN, REFELXION_EVALUATOR_HUMAN, REFELXION_REFLECTION_HUMAN
+from core.scenarios import PRIORITIES, SCENARIOS
 
 def setup_node(state: NegotiationState):
     u_role = state.get("user_role", "구매자") 
@@ -92,12 +92,12 @@ def negotiator_node(state: NegotiationState):
     
     # 프롬프트 구성
     system_message = SystemMessagePromptTemplate.from_template(
-        template=NEGOTIATOR_SYSTEM_PROMPT,
+        template=REFELXION_NEGOTIATOR_SYSTEM,
         input_variables=["role", "opponent", "scenario", "priority", "recent_summary", 
                         "reflections"]
     )
     human_message = HumanMessagePromptTemplate.from_template(
-        template=NEGOTIATOR_HUMAN_PROMPT,
+        template=REFELXION_NEGOTIATOR_HUMAN,
         input_variables=["opponent", "last_message"]
     )
     prompt = ChatPromptTemplate.from_messages([system_message, human_message])
@@ -151,12 +151,12 @@ def evaluation_node(state: NegotiationState):
     dialogue = "\n".join([f"[{m.type}] {m.content}" for m in state["messages"]])
 
     system_message = SystemMessagePromptTemplate.from_template(
-        template=EVALUATOR_SYSTEM_PROMPT,
+        template=REFELXION_EVALUATOR_SYSTEM,
         input_variables=["buyer_main_goal", "buyer_sub_goal", "seller_main_goal", "seller_sub_goal"] 
     )
 
     human_message = HumanMessagePromptTemplate.from_template(
-        template=EVALUATOR_HUMAN_PROMPT,
+        template=REFELXION_EVALUATOR_HUMAN,
         input_variables=["dialogue", "buyer_main_goal", "buyer_sub_goal", "seller_main_goal", "seller_sub_goal"]
     )
     
@@ -243,11 +243,11 @@ def reflection_node(state: NegotiationState):
     )
 
     system_message = SystemMessagePromptTemplate.from_template(
-        template=REFLECTION_SYSTEM_PROMPT  
+        template=REFELXION_REFLECTION_SYSTEM
     )
 
     human_message = HumanMessagePromptTemplate.from_template(
-        template=REFLECTION_HUMAN_PROMPT,
+        template=REFELXION_REFLECTION_HUMAN,
         input_variables=["role", "scenario", "priority", "scores", "past_reflections", "trajectory"]
     )
     
