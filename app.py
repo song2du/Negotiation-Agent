@@ -4,10 +4,55 @@ import sys
 import os
 from langchain_core.messages import HumanMessage, AIMessage
 
-from cot_icl.graph import build_cot_icl_graph
-from react_reflexion.graph import build_reflexion_graph
+from core.graphs import build_graph
+from core.scenarios import PRIORITIES
 
+def render_priority_editor(role, key_prefix):
+    """
+    PRIORITIES 딕셔너리에 정의된 목표들을 가져와서
+    사용자가 이름과 배점을 수정할 수 있는 입력 폼을 렌더링함.
+    """
+    # 1. 기본값 가져오기 (없으면 빈 딕셔너리)
+    defaults = PRIORITIES.get(role, {})
+    
+    updated_goals = {}
+    total_score = 0
+    
+    # 2. 각 목표별 입력 필드 생성
+    # Streamlit은 루프 안에서 위젯 생성 시 key가 고유해야 함
+    for idx, (goal_name, score) in enumerate(defaults.items()):
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            new_name = st.text_input(
+                f"목표 {idx+1}", 
+                value=goal_name, 
+                key=f"{key_prefix}_name_{idx}",
+                help="목표의 내용을 수정할 수 있습니다."
+            )
+            
+        with col2:
+            new_score = st.number_input(
+                "배점", 
+                min_value=0, 
+                max_value=100, 
+                value=score, 
+                step=5,
+                key=f"{key_prefix}_score_{idx}",
+                help="이 목표의 중요도(점수)입니다."
+            )
+        
+        if new_name: # 이름이 비어있지 않은 경우만 추가
+            updated_goals[new_name] = int(new_score)
+            total_score += new_score
 
+    # 3. 총점 표시 (가이드용)
+    if total_score != 100:
+        st.caption(f"⚠️ 현재 총점: **{total_score}점** (연구 표준은 보통 100점 만점입니다)")
+    else:
+        st.caption(f"✅ 현재 총점: **100점** (완벽합니다)")
+        
+    return updated_goals
 
 # --------------------------------------------------------------------------
 # UI 및 세션 초기화
@@ -56,74 +101,31 @@ if not st.session_state.is_started:
                 index=0
             )
 
-            # 협상 목표 선택
-            st.markdown(f"#### 나 ({role})의 우선 순위 설정")
+            st.markdown("---")
 
-            default_u_a = "환불 받기" if role == "구매자" else "환불 거절하기"
-            default_u_b = "상대로부터 사과받기" if role == "구매자" else "상대가 올린 욕설 섞인 리뷰 삭제 요청하기"
+            st.markdown(f"#### 🎯 나 ({role})의 목표 설정")
+            with st.expander("내 목표 상세 편집 (클릭)", expanded=True):
+                user_goals_dict = render_priority_editor(role, key_prefix="user")
 
-            u_goal_a = st.text_input("나의 목표 A (Main)", value=default_u_a)
-            u_goal_b = st.text_input("나의 목표 B (Sub)", value=default_u_b)
-
-            u_weight = st.slider(
-                "⚖️ 중요도 비중 (목표 A <---> 목표 B)", 
-                min_value=0, max_value=100, value=70, step=5,
-                key="user_slider",
-                help="왼쪽으로 갈수록 목표 A가 중요하고, 오른쪽으로 갈수록 목표 B가 중요해집니다."
-            )
-
-            u_score_a = u_weight
-            u_score_b = 100 - u_weight
-        
-            st.caption(f"📊 {u_goal_a} ({u_score_a}점) vs {u_goal_b} ({u_score_b}점)")
-
+            # (2) 상대방 목표 설정
             ai_role_name = "판매자" if role == "구매자" else "구매자"
-            st.markdown(f"#### 상대방 ({ai_role_name})의 우선 순위 설정")
-
-            default_a_a = "환불 받기" if ai_role_name == "구매자" else "환불 거절하기"
-            default_a_b = "상대로부터 사과받기" if ai_role_name == "구매자" else "상대가 올린 욕설 섞인 리뷰 삭제 요청하기"
-
-            a_goal_a = st.text_input("상대 목표 A (Main)", value=default_a_a)
-            a_goal_b = st.text_input("상대 목표 B (Sub)", value=default_a_b)
-
-            a_weight = st.slider(
-                "⚖️ 중요도 비중 (목표 A <---> 목표 B)", 
-                min_value=0, max_value=100, value=60, step=5,
-                key="ai_slider"
-            )
-        
-            a_score_a = a_weight
-            a_score_b = 100 - a_weight
-        
-            st.caption(f"📊 {a_goal_a} ({a_score_a}점) vs {a_goal_b} ({a_score_b}점)")
-
+            st.markdown(f"#### 🤖 상대방 ({ai_role_name})의 목표 설정")
+            with st.expander("상대방 목표 상세 편집 (클릭)", expanded=False):
+                st.info("AI는 이 목표들을 달성하기 위해 전략을 수립합니다.")
+                ai_goals_dict = render_priority_editor(ai_role_name, key_prefix="ai")
 
             st.markdown("---")
             
             # 시작 버튼
             if st.button("🚀 협상 시작하기", use_container_width=True, type="primary"):
                 # 세션 초기화 및 그래프 로드
-                st.session_state.mode = "CoT+In-context learning" if "CoT+In-context learning" in mode else "Reflexion"
+                st.session_state.mode = "CoT" if "CoT+In-context learning" in mode else "Reflexion"
                 st.session_state.user_role = role
                 st.session_state.model_name = model_name
                 st.session_state.config["configurable"]["thread_id"] = str(uuid.uuid4())
                 st.session_state.messages = [] # 화면 표시용 메시지 초기화
-
-                user_goals_dict = {
-                    u_goal_a: u_score_a,
-                    u_goal_b: u_score_b
-                }
-    
-                ai_goals_dict = {
-                    a_goal_a: a_score_a,
-                    a_goal_b: a_score_b
-                }
                 
-                # 그래프 선택 로드
-                if st.session_state.mode == "CoT+In-context learning":
-                    st.session_state.graph = build_cot_icl_graph()
-                else:
-                    st.session_state.graph = build_reflexion_graph()
+                st.session_state.graph = build_graph(st.session_state.mode)
                 
                 # 초기 실행 (Setup -> 첫 발화 유도)
                 # setup_node가 초기 state를 반환하므로 이를 반영해야 함
@@ -175,9 +177,13 @@ else:
     st.chat_message("system", avatar="📝").write(f"**[SYSTEM]** {st.session_state.mode} 모드로 협상을 시작합니다.")
 
     # 1. 기존 메시지 렌더링
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"], avatar=msg.get("avatar")):
-            st.markdown(msg["content"])
+    chat_placeholder = st.empty()
+    def render_messages():
+        with chat_placeholder.container():
+            for msg in st.session_state.messages:
+                with st.chat_message(msg["role"], avatar=msg.get("avatar")):
+                    st.markdown(msg["content"])
+    render_messages()
 
     # 2. 사용자 입력 처리
     if prompt := st.chat_input("메시지를 입력하세요..."):
@@ -188,66 +194,70 @@ else:
 
         # 3. 그래프 실행 및 응답 대기
         with st.spinner("상대방이 생각 중입니다..."):
-            # 그래프에 사용자 메시지 주입
-            # LangGraph는 state의 'messages' 키에 append 됨
             inputs = {"messages": [HumanMessage(content=prompt)]}
             
-            # Reflexion 모드일 경우 loop가 돌 수 있음 (Negotiator -> Evaluator -> Reflector -> Setup -> Negotiator)
-            # 따라서 stream을 통해 중간 과정을 지켜봐야 함
-            
-            response_container = st.empty() # 스트리밍 또는 중간 과정 표시용
-            
+            reset_triggered = False
+            existing_contents = set(msg["content"] for msg in st.session_state.messages)
+              
             for event in st.session_state.graph.stream(inputs, st.session_state.config):
                 for node, data in event.items():
                     
-                    # A. 협상가 (Negotiator / AI Agent) 노드
+                    # Negotiator 노드
                     if node in ["negotiator", "ai_agent"]:
                         if "messages" in data and data["messages"]:
                             ai_msg = data["messages"][-1]
                             content = ai_msg.content
 
-                            if not content: 
+                            if not content:
+                                continue
+                
+                            if content in existing_contents:
                                 continue
                             
-                            # UI에 추가 및 표시
+                            if not reset_triggered:
+                                # 이미 그려진 메시지들과 섞이지 않도록 새 컨테이너 사용
+                                with st.chat_message("assistant", avatar="🤖"):
+                                    st.markdown(content)
+                            
+                            # 화면에 보이는 것과 별개로 기록에는 남김
                             st.session_state.messages.append({
                                 "role": "assistant", 
                                 "content": content, 
                                 "avatar": "🤖"
                             })
-                            with st.chat_message("assistant", avatar="🤖"):
-                                st.markdown(content)
 
-                    # B. 평가자 (Evaluator) 노드 - Reflexion 전용
+                            existing_contents.add(content)
+
+                    # B. Evaluator 노드
                     elif node == "evaluator":
                         result_text = data.get("final_result", "")
-                        with st.status("⚖️ 협상 평가 진행 중...", expanded=True) as status:
-                            st.write(result_text)
-                            score_info = f"구매자 점수: {data.get('buyer_score')} / 판매자 점수: {data.get('seller_score')}"
-                            st.info(score_info)
-                            status.update(label="평가 완료", state="complete")
+                        if not reset_triggered:
+                            with st.status("⚖️ 협상 평가 진행 중...", expanded=True) as status:
+                                st.write(result_text)
+                                score_info = f"구매자 점수: {data.get('buyer_reward')} / 판매자 점수: {data.get('seller_reward')}"
+                                st.info(score_info)
+                                status.update(label="평가 완료", state="complete")
 
-                    # C. 반성자 (Reflector) 노드 - Reflexion 전용
+                    #  Reflector 노드
                     elif node == "reflector":
                         reflections = data.get("reflections", [])
                         if reflections:
-                            last_reflection = reflections[-1]
-                            with st.chat_message("system", avatar="🧠"):
-                                st.warning(f"**[Self-Reflection]** 실패를 감지했습니다. 전략을 수정합니다:\n\n{last_reflection}")
-                        st.session_state.messages = []
-
-                        st.session_state.messages.append({
+                            st.session_state.messages = []
+                            warning_msg = f"**[Self-Reflection]** 목표 달성 실패\n\n전략을 수정하여 다시 접근합니다."
+                            st.session_state.messages.append({
                                     "role": "system",
-                                    "content": f"**전략 수정 완료!** 새로운 마음으로 협상을 다시 시작합니다.\n\n💡 **반성 내용:** {last_reflection}",
+                                    "content": warning_msg,
                                     "avatar": "🔄"
-                                })
+                            })
+                            
+                            reset_triggered = True
+                            
+                            st.toast("전략 수정 중... 대화를 재설정합니다.", icon="🔄")
+            if reset_triggered:
+                st.rerun()
 
-            # 4. 종료 상태 확인
             current_state = st.session_state.graph.get_state(st.session_state.config)
-            # setup_node 등에서 is_finished를 관리하거나, evaluator가 끝났을 때 판단
-            # Reflexion 그래프에서는 'evaluator'가 끝나고 'reflector'로 안 가면 종료임
             
-            # (옵션) 그래프의 is_finished 값 확인
             if current_state.values.get("is_finished") and not current_state.next:
                  st.success("🎉 협상이 최종 종료되었습니다!")
                  st.balloons()

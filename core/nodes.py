@@ -139,16 +139,17 @@ def negotiator_node(state: NegotiationState):
 def reflection_node(state: NegotiationState):
     llm = init_chat_model(model=state["model"], temperature=0.5)
 
-    weighted_priority = _get_weighted_priority(state)
+    weighted_priority = _get_weighted_priority(state, include_instruction=False)
 
     trajectory = "\n".join([f"[{m.type}] {m.content}" for m in state["messages"]])
     reflections = "\n".join(state.get("reflections", []))
 
-    scores = (
-        f"최종 결과: {state.get('final_result', 'N/A')}\n"
-        f"구매자 점수: {state.get('buyer_score', 0)}\n"
-        f"판매자 점수: {state.get('seller_score', 0)}"
-    )
+    if state["ai_role"] == "구매자":
+        my_reward = state.get("buyer_reward", 0.0)
+    else:
+        my_reward = state.get("seller_reward", 0.0)
+    
+    scores = f"이번 협상에서 획득한 나의 점수: {my_reward}점"
 
     system_message = SystemMessagePromptTemplate.from_template(
         template=REFELXION_REFLECTION_SYSTEM
@@ -161,9 +162,9 @@ def reflection_node(state: NegotiationState):
     
     prompt = ChatPromptTemplate.from_messages([system_message, human_message])
 
-    chain = prompt | llm
+    chain = prompt | llm | StrOutputParser()
 
-    response = chain.invoke({
+    content = chain.invoke({
         "role": state["ai_role"],
         "scenario": state["ai_scenario"],
         "priority": weighted_priority,
@@ -171,8 +172,6 @@ def reflection_node(state: NegotiationState):
         "past_reflections": reflections,
         "trajectory": trajectory
     })
-
-    content = response.content
 
     if "최종 결과" in content:
         result_text = content.split("최종 결과:")[-1].strip()
@@ -188,13 +187,11 @@ def logging_node(state: NegotiationState):
     
     llm = init_chat_model(model=state["model"], temperature=0.5)
     system_message = SystemMessagePromptTemplate.from_template(
-            template=EVALUATOR_SYSTEM,
-            input_variables=["buyer_main_goal", "buyer_sub_goal", "seller_main_goal", "seller_sub_goal"] 
+            template=EVALUATOR_SYSTEM
         )
 
     human_message = HumanMessagePromptTemplate.from_template(
-        template=EVALUATOR_HUMAN,
-        input_variables=["dialogue", "buyer_main_goal", "buyer_sub_goal", "seller_main_goal", "seller_sub_goal"]
+        template=EVALUATOR_HUMAN
     )
     
     dialogue = "\n".join([f"[{m.type}] {m.content}" for m in state["messages"]])
@@ -219,20 +216,18 @@ def logging_node(state: NegotiationState):
         "is_finished": True
     }
 
-def evaluate_node(state: NegotiationState):
+def evaluation_node(state: NegotiationState):
     """
     Refexion 에이전트 학습용 보상 계산 노드
     """
     
     llm = init_chat_model(model=state["model"], temperature=0.5)
     system_message = SystemMessagePromptTemplate.from_template(
-            template=EVALUATOR_SYSTEM,
-            input_variables=["buyer_main_goal", "buyer_sub_goal", "seller_main_goal", "seller_sub_goal"] 
+            template=EVALUATOR_SYSTEM
         )
 
     human_message = HumanMessagePromptTemplate.from_template(
-        template=EVALUATOR_HUMAN,
-        input_variables=["dialogue", "buyer_main_goal", "buyer_sub_goal", "seller_main_goal", "seller_sub_goal"]
+        template=EVALUATOR_HUMAN
     )
     
     dialogue = "\n".join([f"[{m.type}] {m.content}" for m in state["messages"]])
@@ -397,7 +392,7 @@ def _save_result_to_csv(state, result_text, buyer_points, seller_points):
 
     df.to_csv(file_path, index=False, encoding="utf-8-sig")
 
-def _get_weighted_priority(state: NegotiationState) -> str:
+def _get_weighted_priority(state: NegotiationState, include_instruction: bool = True) -> str:
     goals = state.get("ai_goals", {})
     if not goals:
         return state.get("ai_priority", "")
@@ -421,14 +416,16 @@ def _get_weighted_priority(state: NegotiationState) -> str:
 
     priority_content = "\n".join(priority_lines)
 
-    strategy_instruction = (
-        f"당신의 목표는 위 항목들의 달성 여부에 따른 '총 획득 점수'를 최대화하는 것입니다.\n"
-        f"- 배점이 높은 항목은 반드시 지켜야 합니다.\n"
-        f"- 배점이 낮은 항목은 배점이 높은 항목을 얻기 위한 Trade-off로 적극 활용하세요.\n"
-        f"- 상대가 배점이 높은 항목을 위협하면 강하게 방어하고, 배점이 낮은 항목을 요구하면 쿨하게 양보하여 신뢰를 얻으세요."
-    )
-
-    return f"{priority_content}\n{strategy_instruction}"
+    if include_instruction:
+        strategy_instruction = (
+            f"당신의 목표는 위 항목들의 달성 여부에 따른 '총 획득 점수'를 최대화하는 것입니다.\n"
+            f"- 배점이 높은 항목은 반드시 지켜야 합니다.\n"
+            f"- 배점이 낮은 항목은 배점이 높은 항목을 얻기 위한 Trade-off로 적극 활용하세요.\n"
+            f"- 상대가 배점이 높은 항목을 위협하면 강하게 방어하고, 배점이 낮은 항목을 요구하면 쿨하게 양보하여 신뢰를 얻으세요."
+        )
+        return f"{priority_content}\n{strategy_instruction}"
+    else:
+        return priority_content
 
 def _parse_reflections(reflections) -> str:
     """Reflection 객체 안전 변환"""

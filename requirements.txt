@@ -6,6 +6,7 @@ python-dotenv
 langchain
 langchain-openai
 langchain-community
+langchain-anthropic
 langgraph
 
 # Vector Database
