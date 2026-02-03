@@ -34,6 +34,7 @@ class NegotiationState(TypedDict):
     reflections: Optional[Annotated[List[str], operator.add]]
     buyer_reward: float
     seller_reward: float
+    max_retries: int
     
     # evaluate result
     final_result: str

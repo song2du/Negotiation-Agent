@@ -41,16 +41,13 @@ def route_after_negotiation(state: NegotiationState):
 
 def route_after_evaluation(state: NegotiationState):
     """평가 후 분기 로직 (Reflexion 전용)"""
-    # 학습용 보상 점수를 기준으로 판단 (예: 둘 다 0점이면 실패로 간주 등)
-    # 여기서는 간단히 무조건 Reflector로 보내거나, 특정 점수 이상이면 종료하도록 설정 가능
-    # *사용자 요구사항*: 무조건 반성 후 재시도 루프를 원한다면 "reflector" 리턴
+    current_reflections = state.get("reflections", [])
+    max_retries = state.get("max_retries", 3) 
     
-    # 예시: 합계 점수가 150점 이상이면 통과 (종료)
-    total_reward = state.get("buyer_reward", 0) + state.get("seller_reward", 0)
-    if total_reward >= 150: 
-        return "logger" # 성공 -> 기록하고 종료
+    if len(current_reflections) >= max_retries:
+        return "logger"
         
-    return "reflector" # 실패 -> 반성하러 감
+    return "reflector"
 
 def build_graph(mode: str):
     """

@@ -90,7 +90,14 @@ if not st.session_state.is_started:
                 ["CoT+In-context learning", "ReAct+Reflexion"],
                 index=0
             )
-            
+            if "Reflexion" in mode:
+                max_retries = st.slider(
+                    "🔄 최대 반성(Retry) 횟수 설정",
+                    min_value=1,
+                    max_value=10,
+                    value=3,
+                    help="협상 실패 시 전략을 수정하여 재시도할 최대 횟수입니다."
+                )
             # 2. 역할 선택
             role = st.selectbox("👤 사용자 역할", ["구매자", "판매자"])
             model_options = {
@@ -139,7 +146,8 @@ if not st.session_state.is_started:
                     "model": model_name, 
                     "messages": [],
                     "user_priority_inputs": user_goals_dict,
-                    "ai_priority_inputs": ai_goals_dict
+                    "ai_priority_inputs": ai_goals_dict,
+                    "max_retries": max_retries
                 }
                 
                 # Setup 단계 실행 (Reflexion의 경우 setup -> negotiator까지 흐름)
@@ -247,8 +255,16 @@ else:
                     elif node == "reflector":
                         reflections = data.get("reflections", [])
                         if reflections:
+                            snapshot = st.session_state.graph.get_state(st.session_state.config)
+                            state_values = snapshot.values
+
+                            current_reflections = state_values.get("reflections", [])
+                            max_retries = state_values.get("max_retries", 3)
+                            current_count = len(current_reflections)+1
+
                             st.session_state.messages = []
-                            warning_msg = f"**[Self-Reflection]** 목표 달성 실패\n\n전략을 수정하여 다시 접근합니다."
+                            warning_msg = (f"**[Self-Reflection]** ({current_count}/{max_retries}회)\n"
+                                           "목표 달성에 실패했습니다. 전략을 수정하여 다시 협상합니다.")
                             st.session_state.messages.append({
                                     "role": "system",
                                     "content": warning_msg,

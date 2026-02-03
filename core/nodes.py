@@ -49,6 +49,9 @@ def setup_node(state: NegotiationState):
     model = state.get("model", "gpt-4o")
     mode = state.get("mode", "reflexion")
 
+    max_retries = state.get("max_retries", 3)
+    past_reflections = state.get("reflections", [])
+
     delete_messages = [RemoveMessage(id=m.id) for m in state.get("messages", [])]
 
     user_goals = copy.deepcopy(PRIORITIES.get(u_role, {}))
@@ -86,7 +89,8 @@ def setup_node(state: NegotiationState):
         "seller_reward": 0.0,
         "final_result": "",
         
-        "reflections": [], 
+        "reflections": past_reflections, 
+        "max_retries": max_retries
     }
     return initial_state
 
