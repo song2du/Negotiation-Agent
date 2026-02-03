@@ -93,13 +93,18 @@ if not st.session_state.is_started:
             
             # 2. 역할 선택
             role = st.selectbox("👤 사용자 역할", ["구매자", "판매자"])
-            
+            model_options = {
+                "GPT-4o": "gpt-4o",
+                "Claude 3 Sonnet": "anthropic/claude-3-sonnet-20240229" 
+            }
             # 3. 모델 선택
-            model_name = st.selectbox(
+            selected_label = st.selectbox(
                 "🧠 LLM 모델 선택",
-                ("gpt-4o", "claude-3-5-sonnet-latest"),
+                options=list(model_options.keys()),
                 index=0
             )
+            model_name = model_options[selected_label]
+
 
             st.markdown("---")
 

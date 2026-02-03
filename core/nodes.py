@@ -4,6 +4,8 @@ from langchain_core.messages import RemoveMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain.chat_models import init_chat_model
+from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 from tools.rag_tools import policy_search_tool
 import uuid
 from datetime import datetime
@@ -93,7 +95,7 @@ def negotiator_node(state: NegotiationState):
     templates = PROMPT_REGISTRY.get(mode, PROMPT_REGISTRY["reflexion"])
 
     tools = [policy_search_tool]
-    llm = init_chat_model(model=state["model"], temperature=0.9).bind_tools(tools)
+    llm = _create_llm(state, temperature=0.9).bind_tools(tools)
     
     recent_msgs = state["messages"][-4:] if state["messages"] else []
     recent_summary = "\n".join([f"{type(m).__name__}: {m.content}" for m in recent_msgs])
@@ -136,7 +138,7 @@ def negotiator_node(state: NegotiationState):
     return {"messages": [AIMessage(content=clean_response)]}
 
 def reflection_node(state: NegotiationState):
-    llm = init_chat_model(model=state["model"], temperature=0.5)
+    llm = _create_llm(state, temperature=0.5)
 
     weighted_priority = _get_weighted_priority(state, include_instruction=False)
 
@@ -184,7 +186,7 @@ def logging_node(state: NegotiationState):
     협상 종료 후, 연구 분석용 데이터를 생성하고 저장하는 노드
     """
     
-    llm = init_chat_model(model=state["model"], temperature=0.5)
+    llm = _create_llm(state, temperature=0.5)
     system_message = SystemMessagePromptTemplate.from_template(
             template=EVALUATOR_SYSTEM
         )
@@ -220,7 +222,7 @@ def evaluation_node(state: NegotiationState):
     Refexion 에이전트 학습용 보상 계산 노드
     """
     
-    llm = init_chat_model(model=state["model"], temperature=0.5)
+    llm = _create_llm(state, temperature=0.5)
     system_message = SystemMessagePromptTemplate.from_template(
             template=EVALUATOR_SYSTEM
         )
@@ -438,3 +440,29 @@ def _parse_reflections(reflections) -> str:
             safe_reflections.append(str(r))
     return "\n".join(safe_reflections)
 
+def _create_llm(state, temperature):
+    """
+    provider/model 형식의 문자열을 파싱하여 init_chat_model을 안전하게 호출하는 헬퍼 함수
+    """
+    full_model_name = state.get("model", "gpt-4o").strip()
+
+    if "claude" in full_model_name.lower():
+        if "/" in full_model_name:
+            model_name = full_model_name.split("/", 1)[1]
+        else:
+            model_name = full_model_name
+            
+        model_name = model_name.strip()
+        
+        return ChatAnthropic(
+            model=model_name,
+            temperature=temperature
+        )
+
+    if full_model_name == "gpt-4o" or "gpt" in full_model_name.lower():
+         return ChatOpenAI(
+            model="gpt-4o",
+            temperature=temperature
+        )
+
+    return init_chat_model(model=full_model_name, temperature=temperature)
