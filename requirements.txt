@@ -2,6 +2,13 @@
 openai
 python-dotenv
 
+# Hugging Face
+huggingface-hub
+transformers
+sentence-transformers
+langchain-huggingface
+datasets
+
 # Framework & Orchestration
 langchain
 langchain-openai

@@ -20,16 +20,17 @@ from core.prompts import (
     COT_NEGOTIATOR_HUMAN, 
     EVALUATOR_SYSTEM,
     EVALUATOR_HUMAN,
-    REFELXION_NEGOTIATOR_SYSTEM,
-    REFELXION_NEGOTIATOR_HUMAN,
-    REFELXION_REFLECTION_SYSTEM,
-    REFELXION_REFLECTION_HUMAN,
+    REFLEXION_NEGOTIATOR_SYSTEM,
+    REFLEXION_NEGOTIATOR_HUMAN,
+    REFLEXION_REFLECTION_SYSTEM,
+    REFLEXION_REFLECTION_HUMAN,
     BASELINE_SYSTEM,
     BASELINE_HUMAN 
 )
 from core.scenarios import (
     PRIORITIES,
-    SCENARIOS
+    SCENARIOS,
+    FEWSHOTS
 )
 from langchain_core.prompts import (
     ChatPromptTemplate, 
@@ -39,8 +40,8 @@ from langchain_core.prompts import (
 
 PROMPT_REGISTRY = {
     "reflexion": {
-        "system": REFELXION_NEGOTIATOR_SYSTEM,
-        "human": REFELXION_NEGOTIATOR_HUMAN
+        "system": REFLEXION_NEGOTIATOR_SYSTEM,
+        "human": REFLEXION_NEGOTIATOR_HUMAN
     },
     "cot": {
         "system": COT_NEGOTIATOR_SYSTEM,
@@ -121,35 +122,88 @@ def negotiator_node(state: NegotiationState):
         tools = [policy_search_tool]
         llm = _create_llm(state, temperature=0.9).bind_tools(tools)
     
-    recent_msgs = state["messages"][-4:] if state["messages"] else []
-    recent_summary = "\n".join([f"{type(m).__name__}: {m.content}" for m in recent_msgs])
+    # 메시지 분류: 현재 진행 중인 Tool Chain과 완료된 대화 기록(History) 분리
+    all_msgs = state.get("messages", [])
+    chat_history = []
+    tool_chain = []
+    
+    # 1. 툴 체인인지 확인 (마지막 메시지가 툴 메시지이거나, AI의 툴 호출인 경우)
+    idx = len(all_msgs)
+    for i in range(len(all_msgs) - 1, -1, -1):
+        m = all_msgs[i]
+        is_tool_msg = (m.type == "tool")
+        is_ai_tool_call = (m.type == "ai" and hasattr(m, "tool_calls") and m.tool_calls)
+        
+        if is_tool_msg or is_ai_tool_call:
+            idx = i
+        else:
+            # 툴과 관련 없는 메시지를 만나면 체인 종료
+            break
+            
+    chat_history = all_msgs[:idx]
+    tool_chain = all_msgs[idx:] # 여기에는 ToolMessage나 AI(tool_calls)가 들어감
+
+    # 2. 화자 식별 매핑 함수 (내부 함수)
+    def _map_role(m):
+        if m.type == "human":
+            return state["user_role"]
+        elif m.type == "ai":
+            return state["ai_role"]
+        elif m.type == "tool":
+            return "시스템(Tool)"
+        return m.type
+
+    # 3. recent_summary 생성 (chat_history만 사용, 툴 체인은 제외)
+    recent_summary = "\n".join([f"{_map_role(m)}: {m.content}" for m in chat_history])
 
     include_instruction = False if mode == "baseline" else True
     weighted_priority_context = _get_weighted_priority(state, include_instruction=include_instruction)
     
     reflections_str = _parse_reflections(state.get("reflections", []))
 
-    last_message = (
-        state["messages"][-1].content 
-        if state["messages"] 
-        else f"이제 협상을 시작합니다. 당신은 {state['ai_role']}로서 상대방에게 첫 마디를 건네세요."
-    )
+    # 4. last_message 결정 (chat_history 기준)
+    if chat_history:
+        last_msg_obj = chat_history[-1]
+        last_message = last_msg_obj.content
+    else:
+        last_message = f"이제 협상을 시작합니다. 당신은 {state['ai_role']}로서 상대방에게 첫 마디를 건네세요."
 
-    system_message = SystemMessagePromptTemplate.from_template(templates["system"])
-    human_message = HumanMessagePromptTemplate.from_template(templates["human"])
-    prompt = ChatPromptTemplate.from_messages([system_message, human_message])
+    # 5. 프롬프트 구성
+    system_template = templates["system"]
+    human_template = templates["human"]
+    
+    system_message = SystemMessagePromptTemplate.from_template(system_template)
+    
+    # 5-1. 시스템 메시지
+    prompt_msgs = [system_message]
+    
+    # 5-2. 휴먼 메시지 & 툴 체인 처리
+    # 툴 체인 중이라면 중간 메시지로 삽입하여 문맥 유지
+    if tool_chain:
+        prompt_msgs.extend(tool_chain)
+    else:
+        # 일반 대화 턴이면 Human Message Template 추가
+        human_message = HumanMessagePromptTemplate.from_template(human_template)
+        prompt_msgs.append(human_message)
+
+    prompt = ChatPromptTemplate.from_messages(prompt_msgs)
 
     chain = prompt | llm
 
-    response = chain.invoke({
+    # 6. invoke 입력 구성
+    invoke_input = {
         "role": state["ai_role"],
         "opponent": state["user_role"],
         "scenario": state["ai_scenario"],
         "priority": weighted_priority_context,
         "recent_summary": recent_summary,
         "reflections": reflections_str,
+        "fewshot": FEWSHOTS,
+        # tool_chain이 없을 때만 사용되지만, 안전을 위해 전달 (템플릿에 없으면 무시됨)
         "last_message": last_message
-    })
+    }
+
+    response = chain.invoke(invoke_input)
 
     if hasattr(response, "tool_calls") and response.tool_calls:
         return {"messages": [response]}
@@ -175,7 +229,17 @@ def reflection_node(state: NegotiationState):
 
     weighted_priority = _get_weighted_priority(state, include_instruction=False)
 
-    trajectory = "\n".join([f"[{m.type}] {m.content}" for m in state["messages"]])
+    # 화자 식별을 명확하게 하기 위해 역할 이름 매핑
+    def _map_role(m_type):
+        if m_type == "human":
+            return state["user_role"]
+        elif m_type == "ai":
+            return state["ai_role"]
+        elif m_type == "tool":
+            return "시스템(Tool)"
+        return m_type
+
+    trajectory = "\n".join([f"[{_map_role(m.type)}] {m.content}" for m in state["messages"]])
     reflections = "\n".join(state.get("reflections", []))
 
     if state["ai_role"] == "구매자":
@@ -186,11 +250,11 @@ def reflection_node(state: NegotiationState):
     scores = f"이번 협상에서 획득한 나의 점수: {my_reward}점"
 
     system_message = SystemMessagePromptTemplate.from_template(
-        template=REFELXION_REFLECTION_SYSTEM
+        template=REFLEXION_REFLECTION_SYSTEM
     )
 
     human_message = HumanMessagePromptTemplate.from_template(
-        template=REFELXION_REFLECTION_HUMAN
+        template=REFLEXION_REFLECTION_HUMAN
     )
     
     prompt = ChatPromptTemplate.from_messages([system_message, human_message])
@@ -281,7 +345,7 @@ def logging_node(state: NegotiationState):
             result_text=result_text,
             buyer_points=buyer_points, 
             seller_points=seller_points, 
-            seesion_id=session_id)
+            session_id=session_id)
     
     except Exception as e:
         print(f"csv 저장 실패: {e}")
@@ -468,14 +532,14 @@ def _calculate_rewards(state, result_text):
 
     return buyer_reward, seller_reward
 
-def _save_result_to_csv(state, dialogue, result_text, buyer_points, seller_points, seesion_id):
+def _save_result_to_csv(state, dialogue, result_text, buyer_points, seller_points, session_id):
     save_dir = "conversations"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
     mode_prefix = state.get("mode", "Negotiation")
 
-    file_name = f"{mode_prefix}_Result_{seesion_id}.csv"
+    file_name = f"{mode_prefix}_Result_{session_id}.csv"
     file_path = os.path.join(save_dir, file_name)
 
     formatted_history = []
@@ -497,7 +561,7 @@ def _save_result_to_csv(state, dialogue, result_text, buyer_points, seller_point
 
     df = pd.DataFrame(formatted_history, columns=["speaker", "utterance", "negotiator_thought", "tool_calls"])
     
-    df["session_id"] = f"{seesion_id}"
+    df["session_id"] = f"{session_id}"
     df["human_role"] = state["user_role"]
     df["ai_role"] = state["ai_role"]
     df["full_dialogue"] = dialogue
