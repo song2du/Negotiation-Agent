@@ -5,6 +5,7 @@ from tools.rag_tools import policy_search_tool
 import uuid
 from datetime import datetime
 import copy
+from langchain_core.runnables import RunnableParallel
 
 from core.prompts import (
     COT_NEGOTIATOR_SYSTEM,
@@ -16,7 +17,12 @@ from core.prompts import (
     REFLEXION_REFLECTION_SYSTEM,
     REFLEXION_REFLECTION_HUMAN,
     BASELINE_SYSTEM,
-    BASELINE_HUMAN 
+    BASELINE_HUMAN,
+    IRP_SYSTEM, IRP_HUMAN,
+    SVI_SYSTEM, SVI_HUMAN,
+    BATNA_SYSTEM, BATNA_HUMAN,
+    STRATEGY_SYSTEM, STRATEGY_HUMAN,
+    UTTERANCE_SYSTEM, UTTERANCE_HUMAN
 )
 from core.scenarios import (
     PRIORITIES,
@@ -96,9 +102,22 @@ def setup_node(state: NegotiationState):
         "buyer_reward": 0.0,
         "seller_reward": 0.0,
         "final_result": "",
-        
         "reflections": past_reflections, 
-        "max_retries": max_retries
+        "max_retries": max_retries,
+
+        # for Psychological Strategic (IRP-SVI)
+        "irp_results": [],
+        "batna_results": [],
+        "instrumental": [],
+        "self": [],
+        "process": [],
+        "relationship": [],
+        "strategies": [],
+        "irp_thoughts": [],
+        "batna_thoughts": [],
+        "svi_thoughts": [],
+        "strategy_thoughts": [],
+        "logger_thought": ""
     }
     return initial_state
 
@@ -417,4 +436,77 @@ def evaluation_node(state: NegotiationState):
         "buyer_reward": buyer_reward,
         "seller_reward": seller_reward,
         "evaluator_thought": evaluator_thought
+    }
+
+def analysis_node(state: NegotiationState):
+    llm = create_llm(state=state, temperature=0.5)
+
+    # IRP Chain
+    irp_prompt = ChatPromptTemplate.from_messages([
+        ("system", IRP_SYSTEM),
+        ("human", IRP_HUMAN)
+    ])
+    irp_chain = irp_prompt | llm
+
+    # BATNA Chain
+    batna_prompt = ChatPromptTemplate.from_messages([
+        ("system", BATNA_SYSTEM),
+        ("human", BATNA_HUMAN)
+    ])
+    batna_chain = batna_prompt | llm
+
+    # SVI Chain
+    svi_prompt = ChatPromptTemplate.from_messages([
+        ("system", SVI_SYSTEM),
+        ("human", SVI_HUMAN)
+    ])
+    svi_chain = svi_prompt | llm
+    
+    messages = state.get("messages", [])
+    
+    # 툴 메시지 제외하고 대화 흐름 파악
+    history_msgs = [m for m in messages if m.type != "tool"]
+    last_message = history_msgs[-1].content if history_msgs else ""
+    history = "\n".join([f"[{m.type}] {m.content}" for m in history_msgs])
+    
+    parallel_chain = RunnableParallel({
+        "irp": irp_chain,
+        "batna": batna_chain,
+        "svi": svi_chain
+    })
+    
+    # 3. 실행
+    results = parallel_chain.invoke({
+        "last_message": last_message,
+        "messages": history
+    })
+
+    irp_data = parse_json_content(results["irp"].content) or {}
+    batna_data = parse_json_content(results["batna"].content) or {}
+    svi_data = parse_json_content(results["svi"].content) or {}
+
+    # 결과 추출 (프롬프트의 JSON 구조 반영)
+    irp_res = irp_data.get("irp_category", "Interests")
+    batna_res = batna_data.get("batna_strength", "Mid")
+
+    inst_val = float(svi_data.get("instrumental", 0.0))
+    self_val = float(svi_data.get("self", 0.0))
+    proc_val = float(svi_data.get("process", 0.0))
+    rel_val = float(svi_data.get("relationship", 0.0))
+
+    irp_thought = irp_data.get("thought", "")
+    batna_thought = batna_data.get("thought", "")
+    svi_thought = svi_data.get("thought", "")
+    
+    # 4. State 업데이트
+    return {
+        "irp_results": [irp_res],
+        "batna_results": [batna_res],
+        "instrumental": [inst_val],
+        "self": [self_val],
+        "process": [proc_val],
+        "relationship": [rel_val],
+        "irp_thoughts": [irp_thought],
+        "batna_thoughts": [batna_thought],
+        "svi_thoughts": [svi_thought]
     }

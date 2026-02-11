@@ -45,4 +45,21 @@ class NegotiationState(TypedDict):
     # thought logging
     reflection_thoughts: Optional[Annotated[List[str], operator.add]]
     evaluator_thought: Optional[Annotated[List[str], operator.add]]
-    logger_thought = str
+    logger_thought: Optional[str]
+
+    # for Psychological Strategic (IRP-SVI)
+    # Analysis Results (Accumulated History)
+    irp_results: Optional[Annotated[List[str], operator.add]]
+    batna_results: Optional[Annotated[List[str], operator.add]]
+    strategies: Optional[Annotated[List[str], operator.add]]
+
+    instrumental: Optional[Annotated[List[float], operator.add]]
+    self: Optional[Annotated[List[float], operator.add]]
+    process: Optional[Annotated[List[float], operator.add]]
+    relationship: Optional[Annotated[List[float], operator.add]]
+
+    # Analysis Thoughts (Accumulated History)
+    irp_thoughts: Optional[Annotated[List[str], operator.add]]
+    batna_thoughts: Optional[Annotated[List[str], operator.add]]
+    svi_thoughts: Optional[Annotated[List[str], operator.add]]
+    strategy_thoughts: Optional[Annotated[List[str], operator.add]]
