@@ -39,7 +39,8 @@ from core.helpers import (
     calculate_rewards,
     calculate_nash_point,
     draw_pareto_plot,
-    save_result_to_csv
+    save_result_to_csv,
+    save_result_to_firebase
 )
 
 PROMPT_REGISTRY = {
@@ -356,16 +357,18 @@ def logging_node(state: NegotiationState):
     all_outcomes, nash_point = calculate_nash_point(state)
 
     try:
-        save_result_to_csv(
-            state=state, 
-            dialogue=dialogue, 
+        save_ok = save_result_to_firebase(
+            state=state,
+            dialogue=dialogue,
             result_text=result_text,
-            buyer_points=buyer_points, 
-            seller_points=seller_points, 
-            session_id=session_id)
-    
+            buyer_points=buyer_points,
+            seller_points=seller_points,
+            session_id=session_id
+        )
+        if not save_ok:
+            print("Firebase 저장 실패")
     except Exception as e:
-        print(f"csv 저장 실패: {e}")
+        print(f"Firebase 저장 실패: {e}")
     
     try:
         draw_pareto_plot(

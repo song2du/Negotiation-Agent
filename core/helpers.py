@@ -7,7 +7,9 @@ from langchain_openai import ChatOpenAI
 import os
 import json
 import pandas as pd
-
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
 def calculate_points(state, result_text):
     """
@@ -366,3 +368,79 @@ def parse_json_content(content: str):
     except json.JSONDecodeError:
         print(f"JSON Parsing Failed: {content[:100]}...")
         return None
+
+def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_points, session_id):
+    """
+    협상 결과를 Firebase Firestore에 저장
+    
+    Args:
+        state: 협상 상태 정보
+        dialogue: 전체 대화 내용
+        result_text: 평가 결과 텍스트
+        buyer_points: 구매자 점수
+        seller_points: 판매자 점수
+        session_id: 세션 고유 ID
+    """
+    try:
+        # Firebase 초기화 (최초 1회)
+        if not firebase_admin._apps:
+            cred = credentials.Certificate("serviceAccountKey.json")
+            firebase_admin.initialize_app(cred)
+
+        db = firestore.client()
+        doc_ref = db.collection("negotiation_results").document(session_id)
+
+        # buyer/seller goals 매핑 (CSV 저장 로직과 동일하게)
+        buyer_goals = state["user_goals"] if state["user_role"] == "구매자" else state["ai_goals"]
+        seller_goals = state["ai_goals"] if state["user_role"] == "구매자" else state["user_goals"]
+
+        # 메시지 히스토리 포매팅
+        formatted_history = []
+        for m in state["messages"]:
+            speaker = state["user_role"] if m.type == "human" else state["ai_role"]
+            if m.type == "tool":
+                speaker = "Tool"
+            formatted_history.append({
+                "speaker": speaker,
+                "utterance": m.content.strip(),
+                "thought": m.additional_kwargs.get("thought", ""),
+                "tool_calls": str(m.tool_calls) if hasattr(m, "tool_calls") and m.tool_calls else ""
+            })
+
+        def _join_thoughts(value):
+            if value is None:
+                return ""
+            if isinstance(value, list):
+                return "\n---\n".join(value)
+            return str(value)
+
+        # Firestore에 저장할 데이터
+        data = {
+            "session_id": session_id,
+            "mode": state.get("mode", "Negotiation"),
+            "human_role": state["user_role"],
+            "ai_role": state["ai_role"],
+            "model": state.get("model", "unknown"),
+            "full_dialogue": dialogue,
+            "message_history": formatted_history,
+            "buyer_goals": buyer_goals,
+            "seller_goals": seller_goals,
+            "buyer_points": buyer_points,
+            "seller_points": seller_points,
+            "evaluation_details": result_text,
+            "evaluator_thoughts_all": _join_thoughts(state.get("evaluator_thought")),
+            "reflector_thoughts_all": _join_thoughts(state.get("reflection_thoughts")),
+            "logger_thoughts": state.get("logger_thought", ""),
+            "timestamp": firestore.SERVER_TIMESTAMP  # 서버 타임스탬프 추가
+        }
+
+        doc_ref.set(data)
+        print(f"Firebase 저장 완료: {session_id}")
+        return True
+        
+    except FileNotFoundError:
+        print("Firebase 인증 파일(serviceAccountKey.json)을 찾을 수 없습니다.")
+        return False
+    except Exception as e:
+        print(f"Firebase 저장 중 오류 발생: {str(e)}")
+        return False
