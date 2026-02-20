@@ -31,3 +31,6 @@ ipykernel
 scikit-learn
 streamlit
 matplotlib
+
+# Firebase Admin
+firebase-admin
