@@ -351,7 +351,7 @@ def draw_pareto_plot(all_outcomes, nash_point, buyer_score, seller_score, sessio
     plt.ylim(-5, 105)
     plt.xlabel("Buyer Score")
     plt.ylabel("Seller Score")
-    plt.title("Negotiation Outcome (Pareto Check)")
+    plt.title(f"Negotiation Outcome ({session_id})")
     plt.grid(True, linestyle=':', alpha=0.6)
     plt.legend(loc='lower left')
     
