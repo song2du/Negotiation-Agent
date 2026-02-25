@@ -453,7 +453,7 @@ def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_p
         if not firebase_admin._apps:
             # 온라인 확인
             if "FIREBASE_JSON" in st.secrets:
-                firebase_info = json.loads(st.secrets["FIREBASE_JSON"])
+                firebase_info = json.loads(st.secrets["FIREBASE_JSON"], strict=False)
                 if "private_key" in firebase_info:
                     firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
                 cred = credentials.Certificate(firebase_info)
