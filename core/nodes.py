@@ -369,12 +369,18 @@ def logging_node(state: NegotiationState):
             buyer_points=buyer_points,
             seller_points=seller_points,
             session_id=session_id,
-            pareto_image_base64=pareto_image_base64
+            pareto_image_base64=pareto_image_base64,
         )
         if not save_ok:
-            print("Firebase 저장 실패")
+            # save_result_to_firebase 내부에서 이미 상세 로그를 출력하므로,
+            # 여기서는 에러를 상위(UI)로 전달해 사용자에게 노출되도록 함
+            raise RuntimeError(
+                "Firebase 저장 실패: FIREBASE_JSON 시크릿 또는 serviceAccountKey.json 설정을 확인하세요."
+            )
     except Exception as e:
         print(f"Firebase 저장 실패: {e}")
+        # ui.chat.render_post_negotiation_forms 쪽에서 잡아서 st.error로 보여줌
+        raise
     
     # 로컬에 파레토 저장하는 로직
 
