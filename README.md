@@ -1,10 +1,12 @@
+
+
 ## HCI Lab Negotiation Agent (Nego-interface)
 
 This repository contains a Streamlit-based interface for **online negotiation experiments** in HCI Lab at Gachon University.
 Participants take the role of buyer or seller and negotiate with an LLM-based agent.
 The system logs the dialogue, outcomes, and subjective evaluations for research analysis.
 
----
+> Note: Due to the study context and target population, **all in-app prompts and negotiation content are written in Korean.**
 
 ### Main Features
 - Streamlit web UI (setup screen + chat screen)
@@ -18,8 +20,6 @@ The system logs the dialogue, outcomes, and subjective evaluations for research 
 - Firebase logging of negotiation traces and metadata
 - Post-negotiation **human coding + subjective satisfaction questionnaire** UI
 
----
-
 ### Tech Stack
 - Python 3.10+
 - Streamlit
@@ -29,8 +29,6 @@ The system logs the dialogue, outcomes, and subjective evaluations for research 
 - Firebase Admin (for research data logging)
 
 All required packages are listed in [requirements.txt](requirements.txt).
-
----
 
 ### How to Run (minimal)
 
@@ -46,8 +44,6 @@ External services (Firebase, RAG DB, API keys, etc.) are configured
 directly in the code (e.g., core/helpers.py, tools/rag_tools.py) and may evolve
 without being fully reflected in this README.
 
----
-
 ### Logs & Research Data
 
 - By default, negotiation results are stored in **Firebase Firestore**
@@ -58,8 +54,6 @@ without being fully reflected in this README.
 - Firebase requires a valid [serviceAccountKey.json](serviceAccountKey.json) and
 	a reachable Firestore project; if initialization fails, results are **not** saved.
 - A legacy CSV export helper exists but is not used by default in the current UI.
-
----
 
 ### Notes
 
