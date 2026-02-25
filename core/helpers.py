@@ -458,6 +458,7 @@ def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_p
                     firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
                 cred = credentials.Certificate(firebase_info)
                 print("Firebase: Online Secrets 인증 사용")
+                st.toast("Firebase 인증 성공!")
             
             # 로컬 확인
             elif os.path.exists("serviceAccountKey.json"):
@@ -470,6 +471,11 @@ def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_p
             firebase_admin.initialize_app(cred)
         
         db = firestore.client()
+
+        if not session_id:
+            st.error("❌ 에러: session_id가 비어있습니다!")
+            return False
+        
         doc_ref = db.collection("negotiation_results").document(session_id)
 
         # buyer/seller goals 매핑 (CSV 저장 로직과 동일하게)
@@ -518,9 +524,12 @@ def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_p
             "human_evaluation": state.get("human_evaluation", {}),
             "survey_results": state.get("survey_results", {})
         }
-
+        
+        st.toast("Firebase에 데이터 저장 중...")
         doc_ref.set(data)
+        st.success(f"저장 완료 ID: {session_id}")
         print(f"Firebase 저장 완료: {session_id}")
+        
         return True
         
     except FileNotFoundError:
@@ -528,4 +537,7 @@ def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_p
         return False
     except Exception as e:
         print(f"Firebase 저장 중 오류 발생: {str(e)}")
+
+        st.error(f"🔥 Firebase 저장 실패! 사유: {str(e)}")
+        st.exception(e)
         return False
