@@ -139,8 +139,7 @@ COT_PREVIOUS_SYSTEM = """
 {scenario}
 
 당신의 목표:
-- 최우선 순위: 환불을 받는 것 (구매자 입장) / 환불을 해주지 않는 것 (판매자 입장)
-- 차선책: "{priority}"
+{priority}
 
 
 추론 방식 (CoT):
