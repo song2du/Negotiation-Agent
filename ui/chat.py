@@ -299,8 +299,12 @@ def render_post_negotiation_forms():
                             }
                         )
                     except Exception as e:
+                        # Firebase 저장 등에서 에러가 발생하면, 에러 메시지를 화면에 남기고
+                        # rerun 을 하지 않아 사용자가 내용을 확인할 수 있도록 함
                         st.error(f"❌ 저장 중 오류 발생: {e}")
+                        return
 
+                # 저장이 성공적으로 끝난 경우에만 화면을 갱신하여 완료 상태로 전환
                 st.rerun()
 
     elif step == "done":
