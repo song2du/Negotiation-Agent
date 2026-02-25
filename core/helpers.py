@@ -12,6 +12,7 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import base64
 from io import BytesIO
+import streamlit as st
 
 def calculate_points(state, result_text):
     """
@@ -450,9 +451,22 @@ def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_p
     try:
         # Firebase 초기화 (최초 1회)
         if not firebase_admin._apps:
-            cred = credentials.Certificate("serviceAccountKey.json")
+            # 온라인 확인
+            if "FIREBASE_JSON" in st.secrets:
+                firebase_info = json.loads(st.secrets["FIREBASE_JSON"])
+                cred = credentials.Certificate(firebase_info)
+                print("Firebase: Online Secrets 인증 사용")
+            
+            # 로컬 확인
+            elif os.path.exists("serviceAccountKey.json"):
+                cred = credentials.Certificate("serviceAccountKey.json")
+                print("Firebase: Local JSON 파일 인증 사용")
+            
+            else:
+                raise FileNotFoundError("인증 정보를 찾을 수 없습니다. (Secrets 또는 JSON 파일)")
+            
             firebase_admin.initialize_app(cred)
-
+        
         db = firestore.client()
         doc_ref = db.collection("negotiation_results").document(session_id)
 
