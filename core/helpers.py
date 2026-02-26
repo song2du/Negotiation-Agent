@@ -183,40 +183,176 @@ def save_result_to_csv(state, dialogue, result_text, buyer_points, seller_points
 
     df.to_csv(file_path, index=False, encoding="utf-8-sig")
 
+def _describe_preferences(goals: dict, role: str) -> str:
+    """현재 가중치(goals)를 바탕으로 역할별 선호를 자연어로 설명한다.
+
+    숫자(가중치)를 진리로 두고, 연구에서 사용했던 서술형 프롬프트와 최대한 일관되게
+    '무엇이 더 중요한지'를 동적으로 요약하는 용도.
+    """
+    if not goals:
+        return ""
+
+    lines = []
+    total = sum(goals.values())
+    if total <= 0:
+        return ""
+
+    # 공통적으로 가장 높은 목표 파악
+    sorted_goals = sorted(goals.items(), key=lambda x: x[1], reverse=True)
+    top_goal, top_score = sorted_goals[0]
+    others_sum = total - top_score
+
+    # 약간의 수식 표현을 위한 헬퍼
+    def _importance_phrase(ratio: float) -> str:
+        if ratio >= 1.5:
+            return "압도적으로 더 중요합니다."
+        if ratio >= 1.2:
+            return "훨씬 더 중요합니다."
+        if ratio >= 1.0:
+            return "조금 더 중요합니다."
+        return "비슷한 수준으로 중요합니다."
+
+    if role == "구매자":
+        refund = goals.get("환불 받기", 0)
+        others = total - refund
+
+        if refund > 0:
+            if others <= 0:
+                lines.append("당신에게 환불을 받아내는 것은 사실상 유일한 핵심 목표입니다.")
+            else:
+                ratio = refund / max(others, 1)
+                if ratio >= 1.5:
+                    lines.append(
+                        "당신에게 환불, 특히 가능한 한 큰 환불은 나머지 모든 이슈를 합친 것보다 압도적으로 더 중요합니다."
+                    )
+                elif ratio >= 1.2:
+                    lines.append(
+                        "당신의 최우선 목표는 환불을 최대화하는 것이며, 다른 이슈보다 훨씬 더 중요하게 다루어야 합니다."
+                    )
+                else:
+                    lines.append(
+                        "당신은 환불을 가장 중요한 목표로 두지만, 다른 이슈들도 완전히 무시할 수는 없습니다."
+                    )
+
+        keep_seller_review = goals.get("판매자에 대한 부정적인 리뷰 유지하기", 0)
+        drop_seller_review_on_me = goals.get("판매자가 나에 대한 부정적인 리뷰 철회하기", 0)
+
+        if keep_seller_review > 0 or drop_seller_review_on_me > 0:
+            a = drop_seller_review_on_me
+            b = keep_seller_review
+            if a > 0 and b > 0:
+                ratio = a / b if b > 0 else 0
+                phrase = _importance_phrase(ratio)
+                lines.append(
+                    "리뷰 관련 이슈들 중에서는, 판매자가 당신에 대해 남긴 부정적인 리뷰를 철회하게 만드는 것을 "
+                    f"당신이 남긴 리뷰를 유지하는 것보다 {phrase}"
+                )
+            elif a > 0:
+                lines.append(
+                    "리뷰와 관련해서는, 무엇보다도 판매자가 당신에 대한 부정적인 리뷰를 철회하도록 만드는 데 관심이 있습니다."
+                )
+            elif b > 0:
+                lines.append(
+                    "리뷰와 관련해서는, 당신이 판매자에 대해 남긴 부정적인 리뷰를 유지하는 데 더 큰 비중을 두고 있습니다."
+                )
+
+        apology = goals.get("상대로부터 공식적인 사과받기", 0)
+        if apology > 0:
+            lines.append("또한, 상대방으로부터 공식적인 사과를 받는 것도 일정 수준 이상의 중요도를 갖습니다.")
+
+    elif role == "판매자":
+        refund_defense = goals.get("환불 방어", 0)
+        drop_buyer_review_on_me = goals.get("구매자가 나에 대한 부정적인 리뷰 철회하기", 0)
+        keep_my_review_on_buyer = goals.get("구매자에 대한 부정적인 리뷰 유지하기", 0)
+
+        if refund_defense > 0:
+            others = total - refund_defense
+            if others <= 0:
+                lines.append("당신에게는 환불을 방어하는 것이 거의 유일한 최우선 목표입니다.")
+            else:
+                ratio = refund_defense / max(others, 1)
+                if ratio >= 1.5:
+                    lines.append(
+                        "당신은 환불을 최대한 줄이거나 막아내는 것을 다른 어떤 이슈보다 압도적으로 중요하게 생각합니다."
+                    )
+                elif ratio >= 1.2:
+                    lines.append(
+                        "당신의 핵심 목표는 환불을 방어하는 것이며, 다른 이슈보다 훨씬 더 우선시됩니다."
+                    )
+                else:
+                    lines.append(
+                        "당신은 환불 방어를 가장 중요한 목표로 두지만, 다른 이슈들도 무시하지 않습니다."
+                    )
+
+        if refund_defense > 0 and drop_buyer_review_on_me > 0:
+            ratio = drop_buyer_review_on_me / max(refund_defense, 1)
+            if ratio >= 0.8:
+                lines.append(
+                    "동시에, 구매자가 당신에 대해 남긴 부정적인 리뷰를 철회하게 만드는 것도 환불 방어에 버금갈 만큼 중요한 목표입니다."
+                )
+            else:
+                lines.append(
+                    "부정적인 리뷰를 철회하게 만드는 것은 환불 방어보다는 다소 낮지만 여전히 의미 있는 목표입니다."
+                )
+
+            # 연구에서 사용한 전략적 선호를 반영한 일반 지침
+            lines.append(
+                "가능하다면 전액 환불을 피하면서, 구매자가 남긴 나쁜 리뷰를 철회해 준다는 조건으로 부분 환불을 제안하는 전략을 우선적으로 고려하세요."
+            )
+
+        if keep_my_review_on_buyer > 0:
+            lines.append(
+                "또한, 당신이 구매자에 대해 남긴 부정적인 리뷰를 유지하는 것도 일정 수준의 중요도를 갖습니다."
+            )
+
+        apology = goals.get("상대로부터 공식적인 사과받기", 0)
+        if apology > 0:
+            lines.append("상대방으로부터 공식적인 사과를 받는 것 역시 부가적인 목표로서 의미가 있습니다.")
+
+    return "\n".join(lines)
+
+
 def get_weighted_priority(state: NegotiationState, include_instruction: bool = True) -> str:
     goals = state.get("ai_goals", {})
     if not goals:
         return state.get("ai_priority", "")
 
+    role = state.get("ai_role", "")
+
+    # 1) 현재 가중치에 기반한 역할별 선호 요약 (동적 프롬프트)
+    persona_summary = _describe_preferences(goals, role)
+
+    # 2) 기존처럼 가중치 랭킹을 표시
     sorted_goals = sorted(goals.items(), key=lambda x: x[1], reverse=True)
-    
     priority_lines = []
-    total_score = 0
-    
+
     for rank, (goal, score) in enumerate(sorted_goals, 1):
-        total_score += score
-        
         if score >= 70:
             tag = "[절대 사수/타협 불가]"
         elif score >= 30:
             tag = "[중요/부분 타협 가능]"
         else:
             tag = "[협상 카드/양보 가능]"
-            
+
         priority_lines.append(f"{rank}순위. {goal} (배점: {score}점) {tag}")
 
     priority_content = "\n".join(priority_lines)
 
+    sections = []
+    if persona_summary:
+        sections.append(persona_summary)
+    sections.append(priority_content)
+
     if include_instruction:
         strategy_instruction = (
-            f"당신의 목표는 위 항목들의 달성 여부에 따른 '총 획득 점수'를 최대화하는 것입니다.\n"
-            f"- 배점이 높은 항목은 반드시 지켜야 합니다.\n"
-            f"- 배점이 낮은 항목은 배점이 높은 항목을 얻기 위한 Trade-off로 적극 활용하세요.\n"
-            f"- 상대가 배점이 높은 항목을 위협하면 강하게 방어하고, 배점이 낮은 항목을 요구하면 쿨하게 양보하여 신뢰를 얻으세요."
+            "당신의 목표는 위 항목들의 달성 여부에 따른 '총 획득 점수'를 최대화하는 것입니다.\n"
+            "- 배점이 높은 항목은 반드시 지켜야 합니다.\n"
+            "- 배점이 낮은 항목은 배점이 높은 항목을 얻기 위한 Trade-off로 적극 활용하세요.\n"
+            "- 상대가 배점이 높은 항목을 위협하면 강하게 방어하고, 배점이 낮은 항목을 요구하면 쿨하게 양보하여 신뢰를 얻으세요."
         )
-        return f"{priority_content}\n{strategy_instruction}"
-    else:
-        return priority_content
+        sections.append(strategy_instruction)
+
+    return "\n\n".join(sections)
 
 def parse_reflections(reflections) -> str:
     """Reflection 객체 안전 변환"""
