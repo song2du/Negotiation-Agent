@@ -2,8 +2,8 @@ name: Keep Streamlit App Alive
 
 on:
   schedule:
-    # 한국 시간 기준 매일 아침 9시, 저녁 9시 (12시간마다)
-    - cron: '0 0,12 * * *'
+    # 15분마다 ping (UTC 기준). 한국 시간도 동일 주기.
+    - cron: '*/15 * * * *'
   workflow_dispatch: # 수동으로 실행하고 싶을 때 사용
 
 jobs:
