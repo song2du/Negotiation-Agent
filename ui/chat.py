@@ -168,6 +168,16 @@ def check_negotiation_finished():
     """협상 종료 상태 확인 및 축하 효과"""
     current_state = st.session_state.graph.get_state(st.session_state.config)
     if current_state.values.get("is_finished") and not current_state.next:
+         # 자동 종료(예: 최대 턴 도달) 시에도 평가 폼으로 진입하도록 동기화
+         if st.session_state.get("form_step") in (None, "", "none"):
+             st.session_state.form_step = "evaluation"
+             st.session_state.messages.append({
+                 "role": "system",
+                 "content": "협상이 종료되었습니다. 아래 폼을 작성해주세요.",
+                 "avatar": "✅"
+             })
+             st.rerun()
+
          st.success("🎉 협상이 최종 종료되었습니다!")
          st.balloons()
 
@@ -324,6 +334,9 @@ def render_chat_screen():
 
     # 3. 대화 기록 렌더링
     render_chat_history()
+
+    # 자동 종료(최대 턴 도달 포함) 상태를 UI 폼 단계와 동기화
+    check_negotiation_finished()
 
     # 4. 협상 종료 후라면 입력 대신 평가/설문 폼 렌더링
     step = st.session_state.get("form_step")
