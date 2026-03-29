@@ -50,7 +50,7 @@ def route_after_evaluation(state: NegotiationState):
         
     return "reflector"
 
-def build_graph(mode: str):
+def build_graph(mode: str, use_checkpoint: bool = True):
     """모드에 따라 적절한 그래프를 생성하여 반환하는 통합 팩토리 함수.
 
     현재 UI에서 사용하는 모드 값:
@@ -62,7 +62,6 @@ def build_graph(mode: str):
     구(舊) "Reflexion" 모드만 반성 루프를 포함한 그래프를 유지합니다.
     """
     workflow = StateGraph(NegotiationState)
-    memory = MemorySaver()
     tools = [policy_search_tool]
 
     workflow.add_node("setup", setup_node)
@@ -134,5 +133,12 @@ def build_graph(mode: str):
         
         # Logger -> END
         workflow.add_edge("logger", END)
+    
+    if use_checkpoint:
+        memory = MemorySaver()
+        return workflow.compile(checkpointer=memory)
+    else:
+        return workflow.compile()
 
-    return workflow.compile(checkpointer=memory)
+# for langgraph-cli testing
+graph = build_graph("baseline", use_checkpoint=False)

@@ -15,6 +15,7 @@ langchain-openai
 langchain-community
 langchain-anthropic
 langgraph
+langgraph-cli[inmem]
 
 # Vector Database
 chromadb

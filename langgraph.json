@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "negotiation": "./core/graphs.py:graph"
+  },
+  "env": ".env"
+}
