@@ -4,6 +4,8 @@ python-dotenv
 
 # Hugging Face
 huggingface-hub
+torch
+torchvision
 transformers
 sentence-transformers
 langchain-huggingface
