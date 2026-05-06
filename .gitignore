@@ -55,7 +55,6 @@ naver_pay_db/
 *.db
 
 # Dataset
-data/
 inputs/
 outputs/
 conversations/
