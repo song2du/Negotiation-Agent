@@ -62,16 +62,16 @@ def render_setup_screen():
                 "🧪 실험 모드 선택",
                 [
                     "Baseline",
-                    "CoT_previous",
-                    "CoT_upgrade"
+                    "CoT",
+                    "IRP+SVI"
                 ],
                 index=0
             )
             # 선택된 모드 설명
             mode_descriptions = {
                 "Baseline": "기본 에이전트",
-                "CoT_previous": "CoT, ICL (JSON 출력 강제, 중재자 피드백 제거, 우선순위 수정)",
-                "CoT_upgrade": "CoT, ICL, Few-shot, RAG Tools, 협상 전략 설명 강화"
+                "CoT": "CoT, ICL (JSON 출력 강제, 중재자 피드백 제거, 우선순위 수정)",
+                "IRP+SVI": "CoT, ICL, Few-shot, RAG Tools, 협상 전략 설명 강화"
             }
             st.caption(f"{mode_descriptions.get(mode, '')}")
             
@@ -111,9 +111,9 @@ def render_setup_screen():
                 # 세션 초기화 및 그래프 로드
                 if "Baseline" in mode:
                     st.session_state.mode = "baseline"
-                elif "CoT_previous" in mode:
+                elif "CoT" in mode:
                     st.session_state.mode = "cot_previous"
-                elif "CoT_upgrade" in mode:
+                elif "IRP+SVI" in mode:
                     st.session_state.mode = "cot_upgrade"
                 st.session_state.user_role = role
                 st.session_state.model_name = model_name
