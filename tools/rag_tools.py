@@ -21,7 +21,7 @@ def get_openai_api_key():
     return os.getenv("OPENAI_API_KEY")
 
 CURRENT_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(CURRENT_FILE_DIR, "..", "naver_pay_db")
+DB_PATH = os.path.join(CURRENT_FILE_DIR, "..", "coupang_db")
 DB_PATH = os.path.abspath(DB_PATH)
 
 api_key = get_openai_api_key()
@@ -51,7 +51,9 @@ def policy_search_tool(query: str):
     
     retrieved_docs = []
     for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
-        doc_with_meta = f"--- [출처: {meta['path']}] ---\n{doc}\n태그: {meta['tags']}"
+        source = meta.get('path') or meta.get('source') or meta.get('category') or 'unknown'
+        tags = meta.get('tags', '')
+        doc_with_meta = f"--- [출처: {source}] ---\n{doc}\n태그: {tags}"
         retrieved_docs.append(doc_with_meta)
     
     return "\n\n".join(retrieved_docs)

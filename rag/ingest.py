@@ -1,63 +1,82 @@
 # 데이터 초기 적재
-import os
 import json
-import pandas as pd
+import os
+
 import chromadb
 from chromadb.utils import embedding_functions
 from dotenv import load_dotenv
 
 load_dotenv()
 
+CURRENT_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.abspath(os.path.join(CURRENT_FILE_DIR, "..", "coupang_db"))
+
+
+def _normalize_metadata_value(value):
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value)
+    return str(value)
+
+
 def run_ingestion():
+    data_paths = ["data/coupang_processed.json"]
 
-    data_paths = [
-    "data/cancellation.json", 
-    "data/exchange.json", 
-    "data/free-exchange-return.json",
-    "data/refund.json",
-    "data/repair.json",
-    "data/return.json"
-    ]
-
-    all_faqs = []
+    ids = []
+    documents = []
+    metadatas = []
 
     for path in data_paths:
-        with open(path, 'r', encoding='utf-8') as file:
-            items = json.load(file) # JSON 배열 로드
-            for item in items:
-                # 검색을 위해 질문과 답변을 합친 텍스트 생성
-                combined_text = f"질문: {item['question']}\n답변: {item['answer']}"
-                
-                all_faqs.append({
-                    "id": f"{item['source']}_{item['id']}", # 고유 ID 생성
-                    "text": combined_text,
-                    "question": item['question'],
-                    "answer": item['answer'],
-                    "path": item['source'],
-                    "tags": ", ".join(item['tag']) # 메타데이터용 문자열 변환
-                })
+        with open(path, "r", encoding="utf-8") as file:
+            items = json.load(file)
 
-    df = pd.DataFrame(all_faqs)
+        source_label = os.path.basename(path)
 
-    client = chromadb.PersistentClient(path="./naver_pay_db")
+        for item in items:
+            document_text = item.get("document")
+            if not document_text:
+                question = item.get("question")
+                answer = item.get("answer")
+                if question and answer:
+                    document_text = f"[{item.get('category', '규정')}] {question}: {answer}"
+
+            if not document_text:
+                continue
+
+            item_id = item.get("id")
+            if item_id is None:
+                item_id = len(ids) + 1
+
+            metadata = {"path": source_label}
+            raw_metadata = item.get("metadata", {})
+            if isinstance(raw_metadata, dict):
+                for key, value in raw_metadata.items():
+                    normalized_value = _normalize_metadata_value(value)
+                    if normalized_value is not None:
+                        metadata[key] = normalized_value
+
+            ids.append(f"{source_label}_{item_id}")
+            documents.append(document_text)
+            metadatas.append(metadata)
+
+    client = chromadb.PersistentClient(path=DB_PATH)
     openai_ef = embedding_functions.OpenAIEmbeddingFunction(
         api_key=os.getenv("OPENAI_API_KEY"),
-        model_name='text-embedding-3-small'
+        model_name="text-embedding-3-small",
     )
-    collection = client.get_or_create_collection(name="refund_policy", embedding_function=openai_ef)
+    collection = client.get_or_create_collection(
+        name="refund_policy",
+        embedding_function=openai_ef,
+    )
 
-    if collection.count() == 0:
-        collection.add(
-            ids=df['id'].tolist(),
-            documents=df['text'].tolist(),
-            metadatas=[{
-                "path": row['path'],
-                "question": row['question'],
-                "tags": row['tags']
-            } for _,row in df.iterrows()]
-    )
+    if ids:
+        collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
 
     print(f"삽입 완료: 총 {collection.count()}개의 항목이 DB에 저장되었습니다.")
+
 
 if __name__ == "__main__":
     run_ingestion()
