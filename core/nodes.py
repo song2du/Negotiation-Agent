@@ -7,19 +7,19 @@ from datetime import datetime
 import copy
 from langchain_core.runnables import RunnableParallel
 
-from core.prompts import (
-    COT_NEGOTIATOR_SYSTEM,
-    COT_NEGOTIATOR_HUMAN, 
-    COT_PREVIOUS_SYSTEM,
-    COT_PREVIOUS_HUMAN,
+from core.prompt import (
+    LRN_SYSTEM,
+    LRN_HUMAN,
+    L_SYSTEM,
+    L_HUMAN,
+    LR_SYSTEM,
+    LR_HUMAN
+)
+from core.prompts_chore import (
     EVALUATOR_SYSTEM,
     EVALUATOR_HUMAN,
-    REFLEXION_NEGOTIATOR_SYSTEM,
-    REFLEXION_NEGOTIATOR_HUMAN,
     REFLEXION_REFLECTION_SYSTEM,
     REFLEXION_REFLECTION_HUMAN,
-    BASELINE_SYSTEM,
-    BASELINE_HUMAN,
     IRP_SYSTEM, IRP_HUMAN,
     SVI_SYSTEM, SVI_HUMAN,
     BATNA_SYSTEM, BATNA_HUMAN,
@@ -48,22 +48,17 @@ from core.helpers import (
 )
 
 PROMPT_REGISTRY = {
-    "baseline": {
-        "system": BASELINE_SYSTEM,
-        "human": BASELINE_HUMAN
+    "pure_llm": {
+        "system": L_SYSTEM,
+        "human": L_HUMAN
     },
-    "cot_previous": {
-        "system": COT_PREVIOUS_SYSTEM,
-        "human": COT_PREVIOUS_HUMAN
+    "llm_rag": {
+        "system": LR_SYSTEM,
+        "human": LR_HUMAN
     },
-    "cot_upgrade": {
-        "system": COT_NEGOTIATOR_SYSTEM,
-        "human": COT_NEGOTIATOR_HUMAN
-    },
-    # 구(舊) Reflexion 모드 호환용 (UI에서는 사용 안 함)
-    "reflexion": {
-        "system": REFLEXION_NEGOTIATOR_SYSTEM,
-        "human": REFLEXION_NEGOTIATOR_HUMAN
+    "llm_rag_nego_strategy": {
+        "system": LRN_SYSTEM,
+        "human": LRN_HUMAN
     }
 }
 
@@ -71,7 +66,7 @@ def setup_node(state: NegotiationState):
     u_role = state.get("user_role", "구매자") 
     a_role = "판매자" if u_role == "구매자" else "구매자"
     model = state.get("model", "gpt-4o")
-    mode = state.get("mode", "baseline")
+    mode = state.get("mode", "pure_llm")
 
     max_retries = state.get("max_retries", 3)
     past_reflections = state.get("reflections", [])
@@ -132,24 +127,21 @@ def setup_node(state: NegotiationState):
     return initial_state
 
 def negotiator_node(state: NegotiationState):
-    mode_val = state.get("mode", "baseline")
+    mode_val = state.get("mode", "pure_llm")
 
     # 새로운 모드 문자열 우선 사용, 기존 대문자 모드는 하위 호환용
     if mode_val in PROMPT_REGISTRY:
         mode = mode_val
-    elif "CoT" in mode_val:
-        # 예전 "CoT" 모드는 개선 버전으로 매핑
-        mode = "cot_upgrade"
-    elif "Baseline" in mode_val:
-        mode = "baseline"
-    elif "Reflexion" in mode_val:
-        mode = "reflexion"
+    elif "LLM+RAG+NEGOTIATION" in mode_val:
+        mode = "llm_rag_nego_strategy"
+    elif "LLM+RAG" in mode_val:
+        mode = "llm_rag"
     else:
-        mode = "baseline"
+        mode = "pure_llm"
 
-    templates = PROMPT_REGISTRY.get(mode, PROMPT_REGISTRY["baseline"])
+    templates = PROMPT_REGISTRY.get(mode, PROMPT_REGISTRY["pure_llm"])
 
-    if mode == "baseline":
+    if mode == "pure_llm":
         llm = create_llm(state, temperature=0.9)
     else:
         tools = [policy_search_tool]
@@ -189,7 +181,7 @@ def negotiator_node(state: NegotiationState):
     # 3. recent_summary 생성 (chat_history만 사용, 툴 체인은 제외)
     recent_summary = "\n".join([f"{_map_role(m)}: {m.content}" for m in chat_history])
 
-    include_instruction = False if mode == "baseline" else True
+    include_instruction = False if mode == "pure_llm" else True
     weighted_priority_context = get_weighted_priority(state, include_instruction=include_instruction)
     
     reflections_str = parse_reflections(state.get("reflections", []))

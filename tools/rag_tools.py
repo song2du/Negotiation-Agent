@@ -44,8 +44,12 @@ collection = client.get_or_create_collection(name="refund_policy", embedding_fun
 @tool
 def policy_search_tool(query: str):
     """
-    네이버페이 규정 검색
-    대화 기록을 입력하면, 내부적으로 최적의 검색어를 생성하여 규정 찾아옴
+    환불/반품/교환 규정 검색 툴.
+    
+    [중요: 쿼리(query) 작성 규칙]
+    1. '토트넘', '유니폼'과 같은 특정 상품명이나 구체적인 상황 설명은 쿼리에 절대 포함하지 마세요. (검색 실패의 주 원인이 됩니다)
+    2. '환불 규정', '교환 조건', '단순 변심 반품', '배송비 부담', '파손 보상' 등 일반적이고 포괄적인 정책 키워드 위주로 검색하세요.
+    3. '리뷰 철회 정책' 같은 RAG 문서에 없을 법한 구체적 협상 조건 대신, 규정의 핵심 키워드인 '반품 기준' 등으로 검색하세요.
     """
     results = collection.query(query_texts=[query], n_results=3)
     

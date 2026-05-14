@@ -54,9 +54,9 @@ def build_graph(mode: str, use_checkpoint: bool = True):
     """모드에 따라 적절한 그래프를 생성하여 반환하는 통합 팩토리 함수.
 
     현재 UI에서 사용하는 모드 값:
-    - "baseline":      BASELINE 프롬프트 사용
-    - "cot_previous":  COT_PREVIOUS 프롬프트 사용
-    - "cot_upgrade":   COT_NEGOTIATOR (개선 버전) 프롬프트 사용
+    - "pure_llm":      BASELINE 프롬프트 사용
+    - "llm_rag":  COT_PREVIOUS 프롬프트 사용
+    - "llm_rag_nego_strategy":   COT_NEGOTIATOR (개선 버전) 프롬프트 사용
 
     이들 모드는 모두 단일 패스 그래프(Reflexion 없음)를 사용합니다.
     구(舊) "Reflexion" 모드만 반성 루프를 포함한 그래프를 유지합니다.
@@ -86,8 +86,8 @@ def build_graph(mode: str, use_checkpoint: bool = True):
     workflow.add_edge("tools", "negotiator")
 
     # --- 모드별 분기 ---
-    # 새 모드(baseline, cot_previous, cot_upgrade)는 모두 단일 패스 사용
-    if mode in ("baseline", "cot_previous", "cot_upgrade") or "CoT" in mode or "Baseline" in mode:
+    # 새 모드(pure_llm, llm_rag, llm_rag_nego_strategy)는 모두 단일 패스 사용
+    if mode in ("pure_llm", "llm_rag", "llm_rag_nego_strategy") or "LLM+RAG+NEGOTIATION" in mode or "LLM+RAG" in mode:
         # [CoT 모드]: Negotiator -> Evaluator -> Logger -> END
         
         workflow.add_conditional_edges(
@@ -102,37 +102,6 @@ def build_graph(mode: str, use_checkpoint: bool = True):
         
         # Logger -> END 
         workflow.add_edge("logger", END)
-
-    else:
-        workflow.add_node("reflector", reflection_node)
-
-        # Negotiator -> (Tools / Evaluator / END)
-        workflow.add_conditional_edges(
-            "negotiator",
-            route_after_negotiation,
-            {
-                "tools": "tools",
-                "evaluator": "evaluator",
-                END: END
-            }
-        )
-
-        # Evaluator -> (Reflector / Logger)
-        workflow.add_conditional_edges(
-            "evaluator",
-            route_after_evaluation,
-            {
-                "reflector": "reflector", # 실패: 반성하러 이동
-                "logger": "logger"        # 성공: 저장하고 종료
-            }
-        )
-        
-        # Reflector -> Setup (재시도)
-        # *중요: 반성 내용을 안고 Setup으로 가서 다시 시작 (Setup에서 reflections는 유지해야 함)
-        workflow.add_edge("reflector", "setup")
-        
-        # Logger -> END
-        workflow.add_edge("logger", END)
     
     if use_checkpoint:
         memory = MemorySaver()
@@ -141,4 +110,4 @@ def build_graph(mode: str, use_checkpoint: bool = True):
         return workflow.compile()
 
 # for langgraph-cli testing
-graph = build_graph("baseline", use_checkpoint=False)
+graph = build_graph("pure_llm", use_checkpoint=False)

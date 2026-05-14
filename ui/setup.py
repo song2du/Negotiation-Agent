@@ -61,17 +61,17 @@ def render_setup_screen():
             mode = st.radio(
                 "🧪 실험 모드 선택",
                 [
-                    "Baseline",
-                    "CoT",
-                    "IRP+SVI"
+                    "Pure LLM",
+                    "LLM + RAG",
+                    "LLM + RAG + Nego Strategy"
                 ],
                 index=0
             )
             # 선택된 모드 설명
             mode_descriptions = {
-                "Baseline": "기본 에이전트",
-                "CoT": "CoT, ICL (JSON 출력 강제, 중재자 피드백 제거, 우선순위 수정)",
-                "IRP+SVI": "CoT, ICL, Few-shot, RAG Tools, 협상 전략 설명 강화"
+                "Pure LLM": "기본 에이전트",
+                "LLM + RAG": "기본 에이전트 + RAG",
+                "LLM + RAG + Nego Strategy": "기본 에이전트 + RAG + 협상 전략"
             }
             st.caption(f"{mode_descriptions.get(mode, '')}")
             
@@ -109,12 +109,12 @@ def render_setup_screen():
             # 시작 버튼
             if st.button("🚀 협상 시작하기", use_container_width=True, type="primary"):
                 # 세션 초기화 및 그래프 로드
-                if "Baseline" in mode:
-                    st.session_state.mode = "baseline"
-                elif "CoT" in mode:
-                    st.session_state.mode = "cot_previous"
-                elif "IRP+SVI" in mode:
-                    st.session_state.mode = "cot_upgrade"
+                if "Nego Strategy" in mode:
+                    st.session_state.mode = "llm_rag_nego_strategy"
+                elif "LLM + RAG" in mode:
+                    st.session_state.mode = "llm_rag"
+                elif "Pure LLM" in mode:
+                    st.session_state.mode = "pure_llm"
                 st.session_state.user_role = role
                 st.session_state.model_name = model_name
                 st.session_state.config["configurable"]["thread_id"] = str(uuid.uuid4())
