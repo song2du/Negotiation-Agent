@@ -34,6 +34,10 @@ SCENARIOS = {
     )
 }
 
+COUNSELOR_SCENARIOS = {
+    
+}
+
 FEWSHOTS = """
 아래는 성공적인 협상의 3가지 예시입니다. 해당 예시의 논리 과정을 참고하여 협상을 이끌어가세요.
 
