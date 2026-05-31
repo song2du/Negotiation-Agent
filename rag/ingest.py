@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CURRENT_FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.abspath(os.path.join(CURRENT_FILE_DIR, "..", "coupang_db"))
+DATA_PATH = os.path.abspath(os.path.join(CURRENT_FILE_DIR, "..", "data", "law.json"))
+DB_PATH = os.path.abspath(os.path.join(CURRENT_FILE_DIR, "..", "law_db"))
 
 
 def _normalize_metadata_value(value):
@@ -23,7 +24,7 @@ def _normalize_metadata_value(value):
 
 
 def run_ingestion():
-    data_paths = ["data/coupang_processed.json"]
+    data_paths = [DATA_PATH]
 
     ids = []
     documents = []
@@ -51,6 +52,10 @@ def run_ingestion():
                 item_id = len(ids) + 1
 
             metadata = {"path": source_label}
+            source = item.get("source")
+            if source:
+                metadata["source"] = source
+
             raw_metadata = item.get("metadata", {})
             if isinstance(raw_metadata, dict):
                 for key, value in raw_metadata.items():
@@ -63,12 +68,17 @@ def run_ingestion():
             metadatas.append(metadata)
 
     client = chromadb.PersistentClient(path=DB_PATH)
-    openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        model_name="text-embedding-3-small",
+    openai_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="intfloat/multilingual-e5-small"
     )
+    collection_name = "refund_policy"
+    try:
+        client.delete_collection(collection_name)
+    except Exception:
+        pass
+
     collection = client.get_or_create_collection(
-        name="refund_policy",
+        name=collection_name,
         embedding_function=openai_ef,
     )
 
