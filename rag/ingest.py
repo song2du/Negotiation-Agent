@@ -39,12 +39,10 @@ def run_ingestion():
         for item in items:
             document_text = item.get("document")
             if not document_text:
-                question = item.get("question")
-                answer = item.get("answer")
-                if question and answer:
-                    document_text = f"[{item.get('category', '규정')}] {question}: {answer}"
-
-            if not document_text:
+                # law.json 등 규정 파일은 `document` 필드에 내용이 들어있어야 합니다.
+                # `question`/`answer` 폴백을 제거하고, 문서가 없으면 항목을 건너뜁니다.
+                item_id = item.get("id", "(no id)")
+                print(f"경고: {source_label}의 항목 {item_id}에 'document'가 없습니다. 건너뜁니다.")
                 continue
 
             item_id = item.get("id")
@@ -67,6 +65,8 @@ def run_ingestion():
             documents.append(document_text)
             metadatas.append(metadata)
 
+    # Ensure DB directory exists for ChromaDB persistent storage
+    os.makedirs(DB_PATH, exist_ok=True)
     client = chromadb.PersistentClient(path=DB_PATH)
     openai_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name="intfloat/multilingual-e5-small"
