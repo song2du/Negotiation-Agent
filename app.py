@@ -1,31 +1,31 @@
 import streamlit as st
 import uuid
 
+from ui.guide import render_guide_screen
 from ui.setup import render_setup_screen
+from ui.explain import render_explain_screen
 from ui.chat import render_chat_screen
 
 st.set_page_config(
-    page_title="HCI Negotiation Agent", 
-    layout="wide", 
+    page_title="HCI Negotiation Agent",
+    layout="wide",
     page_icon="🤝"
 )
 
 def init_session_state():
-    """
-    세션 스테이트(전역 변수) 초기화 함수.
-    앱이 처음 실행될 때 필요한 변수들이 없으면 기본값을 생성합니다.
-    """
     defaults = {
-        "is_started": False,           # 협상 시작 여부
+        "screen": "guide",             # "guide" | "setup" | "explain" | "chat"
+        "completed_modes": [],         # 완료된 모드 목록
         "messages": [],                # 채팅 기록 (UI용)
         "graph": None,                 # LangGraph 객체
-        "config": {"configurable": {"thread_id": str(uuid.uuid4())}}, # 그래프 설정
-        "negotiation_status": "진행 중", # 현재 상태
-        # Human-in-the-loop 평가/설문용 상태
-        "form_step": None,            # None | "evaluation" | "survey" | "done"
-        "human_evaluation": {},       # 협상 결과 코딩 값 저장
-        "survey_results": {},         # 심리적 만족도 설문 응답 저장
-        "show_end_success": False     # 종료 성공 메시지 플래그
+        "config": {"configurable": {"thread_id": str(uuid.uuid4())}},
+        "negotiation_status": "진행 중",
+        "form_step": None,
+        "human_evaluation": {},
+        "survey_results": {},
+        "show_end_success": False,
+        "user_priority_inputs": {},
+        "ai_priority_inputs": {},
     }
 
     for key, value in defaults.items():
@@ -33,13 +33,16 @@ def init_session_state():
             st.session_state[key] = value
 
 def main():
-    # 세션 초기화 실행
     init_session_state()
 
-    # 화면 라우팅
-    # is_started 값에 따라 '설정 화면'과 '채팅 화면' 중 하나만 보여줍니다.
-    if not st.session_state.is_started:
+    screen = st.session_state.screen
+
+    if screen == "guide":
+        render_guide_screen()
+    elif screen == "setup":
         render_setup_screen()
+    elif screen == "explain":
+        render_explain_screen()
     else:
         render_chat_screen()
 

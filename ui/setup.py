@@ -117,6 +117,7 @@ def render_setup_screen():
                     st.session_state.mode = "pure_llm"
                 st.session_state.user_role = role
                 st.session_state.model_name = model_name
+                st.session_state.user_priority_inputs = user_goals_dict
                 st.session_state.config["configurable"]["thread_id"] = str(uuid.uuid4())
                 st.session_state.messages = [] # 화면 표시용 메시지 초기화
                 
@@ -151,5 +152,5 @@ def render_setup_screen():
                         st.error(f"초기화 중 오류 발생: {e}")
                         st.stop()
 
-                st.session_state.is_started = True
+                st.session_state.screen = "explain"
                 st.rerun()

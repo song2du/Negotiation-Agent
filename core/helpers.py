@@ -587,22 +587,25 @@ def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_p
     try:
         # Firebase 초기화 (최초 1회)
         if not firebase_admin._apps:
-            # 온라인 확인
-            if "FIREBASE_JSON" in st.secrets:
+            # st.secrets 접근 시 secrets.toml이 없으면 FileNotFoundError 발생 — 로컬 로 fallback
+            try:
+                has_secret = "FIREBASE_JSON" in st.secrets
+            except Exception:
+                has_secret = False
+
+            if has_secret:
                 firebase_info = json.loads(st.secrets["FIREBASE_JSON"], strict=False)
                 if "private_key" in firebase_info:
                     firebase_info["private_key"] = firebase_info["private_key"].replace("\\n", "\n")
                 cred = credentials.Certificate(firebase_info)
                 print("Firebase: Online Secrets 인증 사용")
-                st.toast("Firebase 인증 성공!")
-            
-            # 로컬 확인
-            elif os.path.exists("serviceAccountKey.json"):
-                cred = credentials.Certificate("serviceAccountKey.json")
-                print("Firebase: Local JSON 파일 인증 사용")
-            
             else:
-                raise FileNotFoundError("인증 정보를 찾을 수 없습니다. (Secrets 또는 JSON 파일)")
+                # 로컬: helpers.py 위치 기준 절대 경로
+                key_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "serviceAccountKey.json")
+                if not os.path.exists(key_path):
+                    raise FileNotFoundError(f"serviceAccountKey.json을 찾을 수 없습니다: {key_path}")
+                cred = credentials.Certificate(key_path)
+                print(f"Firebase: Local JSON 파일 인증 사용 ({key_path})")
             
             firebase_admin.initialize_app(cred)
         

@@ -353,20 +353,17 @@ def logging_node(state: NegotiationState):
     except Exception as e:
         print(f"파레토 그래프 base64 변환 실패: {e}")
 
-    try:
-        save_ok = save_result_to_firebase(
-            state=state,
-            dialogue=dialogue,
-            result_text=result_text,
-            buyer_points=buyer_points,
-            seller_points=seller_points,
-            session_id=session_id,
-            pareto_image_base64=pareto_image_base64
-        )
-        if not save_ok:
-            print("Firebase 저장 실패")
-    except Exception as e:
-        print(f"Firebase 저장 실패: {e}")
+    save_ok = save_result_to_firebase(
+        state=state,
+        dialogue=dialogue,
+        result_text=result_text,
+        buyer_points=buyer_points,
+        seller_points=seller_points,
+        session_id=session_id,
+        pareto_image_base64=pareto_image_base64
+    )
+    if not save_ok:
+        raise RuntimeError(f"Firebase 저장 실패 (session_id: {session_id}). 터미널 로그를 확인하세요.")
     
     # 로컬에 파레토 저장하는 로직
 

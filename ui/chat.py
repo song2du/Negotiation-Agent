@@ -145,8 +145,9 @@ def render_sidebar():
             st.rerun()
         
         if st.button("🔄 실험 다시 하기 (초기화)", type="secondary", use_container_width=True):
-            st.session_state.is_started = False
+            st.session_state.screen = "guide"
             st.session_state.messages = []
+            st.session_state.form_step = None
             st.rerun()
 
 def render_chat_history():
@@ -319,6 +320,19 @@ def render_post_negotiation_forms():
 
     elif step == "done":
         st.success("✅ 평가와 설문이 모두 완료되었습니다.")
+
+        if st.button("다음 실험으로 →", use_container_width=True, type="primary"):
+            current_mode = st.session_state.get("mode")
+            completed = st.session_state.get("completed_modes", [])
+            if current_mode and current_mode not in completed:
+                completed.append(current_mode)
+                st.session_state.completed_modes = completed
+            st.session_state.screen = "guide"
+            st.session_state.messages = []
+            st.session_state.form_step = None
+            st.session_state.human_evaluation = {}
+            st.session_state.survey_results = {}
+            st.rerun()
 
 def render_chat_screen():
     """채팅 화면 전체를 구성하는 메인 함수"""
