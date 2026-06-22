@@ -561,15 +561,31 @@ def pareto_to_base64(all_outcomes, nash_point, buyer_score, seller_score, sessio
     return image_base64
 
 def parse_json_content(content: str):
-    """마크다운 코드 블록 제거 및 JSON 파싱"""
+    """마크다운 코드 블록 제거 및 JSON 파싱.
+    모델이 JSON 앞뒤에 설명 텍스트를 붙여도 JSON 블록을 추출해 파싱."""
+    import re
+    clean_content = content.strip()
+
+    # 마크다운 코드 블록 제거
+    if clean_content.startswith("```"):
+        clean_content = re.sub(r"```(?:json)?", "", clean_content).replace("```", "").strip()
+
+    # 1차: 전체를 JSON으로 파싱 시도
     try:
-        clean_content = content.strip()
-        if clean_content.startswith("```"):
-            clean_content = clean_content.replace("```json", "").replace("```", "")
         return json.loads(clean_content)
     except json.JSONDecodeError:
-        print(f"JSON Parsing Failed: {content[:100]}...")
-        return None
+        pass
+
+    # 2차: 텍스트 안에서 첫 번째 {...} 블록 추출 시도
+    match = re.search(r"\{.*\}", clean_content, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+
+    print(f"JSON Parsing Failed: {content[:100]}...")
+    return None
 
 def save_result_to_firebase(state, dialogue, result_text, buyer_points, seller_points, session_id, pareto_image_base64=None):
     """
