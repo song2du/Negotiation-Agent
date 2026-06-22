@@ -127,7 +127,12 @@ def render_setup_screen():
                             for node, data in event.items():
                                 if "messages" in data and data["messages"]:
                                     last_msg = data["messages"][-1]
-                                    if isinstance(last_msg, AIMessage):
+                                    is_plain_ai = (
+                                        isinstance(last_msg, AIMessage)
+                                        and last_msg.content
+                                        and not getattr(last_msg, "tool_calls", None)
+                                    )
+                                    if is_plain_ai:
                                         st.session_state.messages.append({
                                             "role": "assistant",
                                             "content": last_msg.content,
