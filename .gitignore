@@ -50,8 +50,7 @@ naver_pay_db/
 .langchain/
 .langsmith/
 
-### Data & Databases 
-*.sqlite3
+### Data & Databases
 *.db
 
 # Dataset
