@@ -50,6 +50,14 @@ def render_explain_screen():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        st.error(
+            "⚠️ **협상 진행 안내**  \n"
+            "최대 턴 수는 **20턴**입니다.  \n"
+            "협상이 타결되거나 더 이상 진전이 없다고 판단되면 **협상 종료 버튼**을 눌러주세요."
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         if st.button("✅ 내용을 숙지했습니다. 협상 시작!", use_container_width=True, type="primary"):
             st.session_state.screen = "chat"
             st.rerun()

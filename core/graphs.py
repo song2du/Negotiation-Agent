@@ -32,7 +32,7 @@ def route_after_negotiation(state: NegotiationState):
         return "tools"
     
     # 종료 조건 확인 (턴 수 or is_finished 플래그)
-    MAX_TURNS = 10
+    MAX_TURNS = 20
     current_turns = len([m for m in state["messages"] if m.type == "human"])
     
     if state.get("is_finished") or current_turns >= MAX_TURNS:

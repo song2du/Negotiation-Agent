@@ -103,6 +103,14 @@ def process_graph_stream(user_input):
 def render_sidebar():
     """사이드바 정보 및 초기화 버튼 렌더링"""
     with st.sidebar:
+        st.info(
+            "**협상 진행 안내**\n\n"
+            "최대 턴 수는 **20턴**입니다.\n\n"
+            "협상이 타결되거나 더 이상 진전이 없다고 판단되면 아래 **협상 종료** 버튼을 눌러주세요."
+        )
+
+        st.divider()
+
         st.subheader("실험 정보")
         st.write(f"**모드:** {st.session_state.mode}")
         st.write(f"**내 역할:** {st.session_state.user_role}")
