@@ -45,7 +45,7 @@ def render_explain_screen():
 
         st.warning(
             f"상대방({ai_role})도 자신만의 우선순위에 따라 협상을 진행합니다. "
-            "서로의 목표가 다를 수 있으며, 합의를 이끌어내는 것이 목표입니다."
+            "서로의 목표가 다를 수 있으며, 자신의 점수를 최대한 지키며 합의에 도달하는 것이 목표입니다."
         )
 
         st.markdown("<br>", unsafe_allow_html=True)
