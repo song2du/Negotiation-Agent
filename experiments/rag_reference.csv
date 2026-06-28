@@ -1,0 +1,173 @@
+﻿source,content,file
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+cancellation.md,,cancellation.json
+,[청약철회 원칙] 제24조 제1항: 회원은 계약 서면 수령(또는 공급 시작)일로부터 7일 이내에 자유롭게 청약을 철회(환불)할 수 있다.,coupang_processed.json
+,[청약철회 제한] 제24조 제2항: 상품 배송 후 특정 사유(각 호 참조)에 해당하면 회원은 반품 및 교환을 요청할 수 없다.,coupang_processed.json
+,"[청약철회 예외] 제24조 제2항 제1호: 회원 책임으로 상품이 멸실/훼손된 경우 반품 불가. (단, 내용 확인을 위한 포장 훼손은 제외)",coupang_processed.json
+,[청약철회 예외] 제24조 제2항 제2호: 회원의 사용 또는 일부 소비로 상품 가치가 현저히 감소한 경우 반품 불가.,coupang_processed.json
+,[청약철회 예외] 제24조 제2항 제3호: 시간 경과로 재판매가 곤란할 정도로 상품 가치가 현저히 감소한 경우 반품 불가.,coupang_processed.json
+,"[청약철회 예외] 제24조 제2항 제4호: 복제 가능한 상품(CD, 도서 등)의 포장을 훼손한 경우 반품 불가.",coupang_processed.json
+,[청약철회 예외] 제24조 제2항 제5호: 회사가 미리 청약철회 제한을 고지하고 회원이 동의한 경우 반품 불가.,coupang_processed.json
+,[청약철회 예외] 제24조 제2항 제6호: 용역 또는 디지털콘텐츠의 제공이 개시된 경우 반품 불가. (가분적 콘텐츠의 미개시 부분은 제외),coupang_processed.json
+,[청약철회 예외] 제24조 제2항 제7호: 주문제작 상품 등 판매자에게 중대한 피해가 예상되어 사전 고지 후 서면 동의를 받은 경우 반품 불가.,coupang_processed.json
+,"[청약철회 특례] 제24조 제3항: 표시/광고와 다르거나 오배송된 경우, 상품 수령 후 3개월 이내 또는 사실을 안 날로부터 30일 이내에 환불 가능.",coupang_processed.json
+,[교환 처리 절차] 제24조 제4항: 교환 신청 시 재고가 없으면 반품으로 처리되어 환불이 진행된다.,coupang_processed.json
+,[환급 절차] 제25조 제1항: 상품 반환 후 3영업일 이내 대금 환급. 지연 시 법정 지연이자율을 곱한 이자를 지급한다.,coupang_processed.json
+,[환급 방법] 제25조 제2항: 신용카드/전자화폐 결제 시 지체 없이 결제 수단 제공 사업자에게 청구 정지 또는 취소를 요청한다.,coupang_processed.json
+,[가치감소 비용 청구] 제25조 제3항: 상품 일부 사용/소비 시 회사는 회원에게 소요 비용 또는 재판매 가격 하락분만큼 비용을 청구할 수 있다.,coupang_processed.json
+,[비용산정 기준] 제25조 제3항 제1호: 소모성 부품 사용으로 재판매 가격이 현저히 하락한 경우 해당 부품 공급 비용.,coupang_processed.json
+,[비용산정 기준] 제25조 제3항 제2호: 다수 가분물 구성 상품 중 일부를 소비한 경우 해당 부분의 공급 비용.,coupang_processed.json
+,"[반품비용 부담] 제25조 제4항: 단순 변심 반품비는 회원이 부담. 단, 광고와 다르거나 계약 불이행 시에는 회사가 부담한다.",coupang_processed.json
+,"[반품거절 및 구매] 제26조 제1항: 반품 불가 상품 반품 시, 회사는 반품을 거절하거나 일정 비율 금액(구매 비용)으로 해당 상품을 직접 구매할 수 있다.",coupang_processed.json
+,"[구매 비용 지급] 제26조 제2항: 회사가 구매 결정 시 검수 후 구매 비용을 결정하며, 원 결제 수단을 통해 지급한다.",coupang_processed.json
+,[세부사항 고지] 제26조 제3항: 구매 대상 상품 및 비용 산정 기준 등 상세 사항은 별도 페이지나 상품 페이지에 공지한다.,coupang_processed.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+coupang_terms.json,,coupang_raw.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+exchange.md,,exchange.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+free-exchange-return.md,,free-exchange-return.json
+전자상거래법 17조 1항,[청약철회 기간] 제17조 제1항: 통신판매업자와 계약을 체결한 소비자는 계약내용 서면 수령일 또는 재화 공급이 시작된 날부터 7일 이내에 청약철회를 할 수 있다.,law.json
+전자상거래법 17조 2항,[청약철회 예외] 제17조 제2항: 다음 각 호의 사유에 해당하는 경우 소비자는 통신판매업자의 의사에 반하여 청약철회를 할 수 없다.,law.json
+전자상거래법 17조 2항 1호,"[청약철회 예외] 제17조 제2항 제1호: 소비자 책임으로 재화등이 멸실/훼손된 경우 반품 불가. (단, 내용 확인을 위한 포장 훼손은 제외)",law.json
+전자상거래법 17조 2항 2호,[청약철회 예외] 제17조 제2항 제2호: 소비자의 사용 또는 일부 소비로 재화등의 가치가 현저히 감소한 경우 반품 불가.,law.json
+전자상거래법 17조 2항 3호,[청약철회 예외] 제17조 제2항 제3호: 시간이 지나 다시 판매하기 곤란할 정도로 재화등의 가치가 현저히 감소한 경우 반품 불가.,law.json
+전자상거래법 17조 2항 4호,[청약철회 예외] 제17조 제2항 제4호: 복제가 가능한 재화등의 포장을 훼손한 경우 반품 불가.,law.json
+전자상거래법 17조 2항 5호,[청약철회 예외] 제17조 제2항 제5호: 용역 또는 디지털콘텐츠의 제공이 개시된 경우 반품 불가. (가분적 콘텐츠의 미개시 부분은 제외),law.json
+전자상거래법 17조 2항 6호,[청약철회 예외] 제17조 제2항 제6호: 그 밖에 거래의 안전을 위하여 대통령령으로 정하는 경우 반품 불가.,law.json
+전자상거래법 17조 3항,"[청약철회 특례] 제17조 제3항: 표시/광고와 다르거나 계약내용과 다르게 이행된 경우, 공급받은 날부터 3개월 이내 또는 사실을 안 날로부터 30일 이내에 환불 가능.",law.json
+전자상거래법 17조 4항,[서면 철회 효력] 제17조 제4항: 청약철회등을 서면으로 하는 경우에는 그 의사표시가 적힌 서면을 발송한 날에 효력이 발생한다.,law.json
+전자상거래법 17조 5항,"[입증 책임] 제17조 제5항: 재화등의 훼손에 대한 소비자의 책임 여부, 계약 체결 사실 및 시기 등에 다툼이 있는 경우 통신판매업자가 증명해야 한다.",law.json
+전자상거래법 17조 6항,[권리행사 방해 금지] 제17조 제6항: 청약철회가 불가능한 재화의 경우 통신판매업자는 포장 등에 명확히 표시하거나 시험 사용 상품을 제공하여 청약철회 권리 행사가 방해받지 않도록 조치해야 한다.,law.json
+전자상거래법 18조 1항,"[재화등의 반환 의무] 제18조 제1항: 소비자는 청약철회를 한 경우 이미 공급받은 재화등을 반환해야 한다. (단, 용역 또는 디지털콘텐츠인 경우는 제외)",law.json
+전자상거래법 18조 2항,[환급 절차] 제18조 제2항: 통신판매업자는 재화를 반환받은 날부터 3영업일 이내에 대금을 환급해야 한다. 지연 시 지연배상금을 지급한다.,law.json
+전자상거래법 18조 3항,[결제 취소 요청] 제18조 제3항: 신용카드 등 결제수단으로 대금을 지급받은 경우 통신판매업자는 지체 없이 결제업자에게 대금 청구를 정지하거나 취소하도록 요청해야 한다.,law.json
+전자상거래법 18조 4항,[결제업자 환급 의무] 제18조 제4항: 대금을 환급받은 결제업자는 지체 없이 소비자에게 환급하거나 환급에 필요한 조치를 해야 한다.,law.json
+전자상거래법 18조 5항,[환급 지연배상금] 제18조 제5항: 환급을 지연하여 소비자가 대금을 결제하게 한 통신판매업자는 그 지연기간에 대한 지연배상금을 소비자에게 지급해야 한다.,law.json
+전자상거래법 18조 6항,"[상계 요청권] 제18조 제6항: 결제업자에게 대금이 환급되지 않은 경우, 소비자는 결제업자에게 통신판매업자에 대한 다른 채무와 상계할 것을 요청할 수 있다.",law.json
+전자상거래법 18조 7항,"[결제 거부권] 제18조 제7항: 결제업자가 상계를 게을리한 경우 소비자는 결제 거부를 할 수 있으며, 통신판매업자와 결제업자는 이를 이유로 소비자에게 불이익을 주어선 안 된다.",law.json
+전자상거래법 18조 8항,[가치감소 비용 청구] 제18조 제8항: 재화등이 일부 사용/소비된 경우 통신판매업자는 소비자가 얻은 이익 또는 공급에 든 비용을 청구할 수 있다.,law.json
+전자상거래법 18조 9항,"[반품비용 부담-단순변심] 제18조 제9항: 제17조 제1항에 따른 청약철회의 경우, 반환에 필요한 비용은 소비자가 부담하며 회사는 위약금이나 손해배상을 청구할 수 없다.",law.json
+전자상거래법 18조 10항,"[반품비용 부담-특례] 제18조 제10항: 제17조 제3항(표시·광고 상이)에 따른 청약철회의 경우, 재화등의 반환에 필요한 비용은 통신판매업자가 부담한다.",law.json
+전자상거래법 18조 11항,"[연대 책임] 제18조 제11항: 통신판매업자, 대금을 받은 자, 계약 체결자가 동일인이 아닌 경우 대금 환급 의무에 대해 연대하여 책임을 진다.",law.json
+전자상거래법 시행렬 21조의3,[지연이자율] 제21조의3(시행령): 대금 환급 지연 시 적용되는 지연배상금의 이율은 연 100분의 15로 한다.,law.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+refund.md,,refund.json
+repair.md,,repair.json
+repair.md,,repair.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
+return.md,,return.json
